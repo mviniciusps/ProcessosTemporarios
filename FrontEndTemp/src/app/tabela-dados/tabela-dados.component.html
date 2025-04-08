@@ -1,0 +1,24 @@
+<div class="table-wrapper">
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th><input type="checkbox" /></th>
+                @for (coluna of colunasTabela; track coluna) {
+                <th>{{ coluna.titulo }}</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @for (dado of dadosDeclaracao; let i = $index; track dado) {
+            <tr>
+                <td>{{i+1}}</td>
+                <td><input type="checkbox" /></td>
+                @for (coluna of colunasTabela; track coluna) {
+                <td>{{ dado[coluna.campo]}}</td>
+                }
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>
