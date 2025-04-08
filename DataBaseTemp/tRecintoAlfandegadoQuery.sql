@@ -115,10 +115,10 @@ EXEC stp_inserirDadosTabelaRecintoAlfandegado @tInserirDados = @t_tempInserirDad
 
 --Fim da Procedure
 
--- 00001 - try to solve the truncated table error using a step by step way, (it was solved, excluded the type table and do it again, datas inserted succesfully)
-SELECT @@TRANCOUNT --is there transaction opened?
+-- 00001 - resolver o erro de tabela truncada inserindo manualmente passo a passo. Foi resolvido: excluí a tabela type e a recriei, os dados foram inseridos com sucesso.
+SELECT @@TRANCOUNT --há transação aberta
 
---Original table, datas are inserted
+--Tabela orginal, dados são inseridos
 INSERT INTO tRecintoAlfandegado
 ( cNumeroRecintoAduaneiro,
 			cNomeRecinto,
@@ -129,11 +129,11 @@ VALUES
 (3911301, 'Porto de Fortaleza - Cia. Docas do Ceara - Porto Maritimo ALF.', 'Fortaleza', 'Ceará', 0317900),
 (5921301, 'Porto de Salvador - Codeba - Porto Marit. Alf. - Uso Publico', 'Salvador', 'Bahia', 0517800)
 
-DROP PROCEDURE stp_inserirDadosTabelaRecintoAlfandegado --drop procedure that contains the type table
+DROP PROCEDURE stp_inserirDadosTabelaRecintoAlfandegado --drop procedure que contem a variavel tipo tabela
 
-DROP TYPE dtInserirDados;--drop type table
+DROP TYPE dtInserirDados;--deletar tipo tabela
 
-CREATE TYPE dtInserirDados --create again type table
+CREATE TYPE dtInserirDados --criar de novo o tipo tabela
 AS TABLE
 (
 		cNumeroRecintoAduaneiro CHAR(7),
@@ -143,7 +143,7 @@ AS TABLE
 		cUnidadeReceitaFederal CHAR(7)
 )
 
-SELECT LEN('Porto de Fortaleza - Cia. Docas do Ceara - Porto Maritimo ALF.') -- verify this one text length
+SELECT LEN('Porto de Fortaleza - Cia. Docas do Ceara - Porto Maritimo ALF.') -- verificar tamanho da string
 --Fim do teste
 
 
@@ -165,8 +165,9 @@ Marcus Paiva				 02/04/2025 Trocad a seguinte sintaxe FORMAT(ta.dVencimentoGaran
 							 pois VIEWS não aceitam FORMAT
 */
 CREATE OR ALTER VIEW vRecintoAlfandegado
+WITH ENCRYPTION, SCHEMABINDING
 AS
-SELECT CONCAT(tr.cNomeRecinto,' - ', tr.cCidadeRecinto,'/',
+SELECT td.cReferenciaBraslog AS [Referencia Braslog], CONCAT(tr.cNomeRecinto,' - ', tr.cCidadeRecinto,'/',
 	CASE
 		WHEN tr.cEstadoRecinto = 'Bahia' THEN'BA'
 		WHEN tr.cEstadoRecinto = 'Ceará' THEN'CE'
@@ -176,7 +177,11 @@ SELECT CONCAT(tr.cNomeRecinto,' - ', tr.cCidadeRecinto,'/',
 		WHEN tr.cEstadoRecinto = 'São Paulo' THEN'SP'
 		WHEN tr.cEstadoRecinto = 'Paraná' THEN 'PR'
 		WHEN tr.cEstadoRecinto = 'Amazonas' THEN 'AM'
-	END) AS [Recinto Alfandegado], tr.cUnidadeReceitaFederal AS [URF de Despacho], tr.cNumeroRecintoAduaneiro AS [Código do Recinto] FROM tRecintoAlfandegado tr
+	END) AS [Recinto Alfandegado], tr.cUnidadeReceitaFederal AS [URF de Despacho], tr.cNumeroRecintoAduaneiro AS [Código do Recinto]
+	FROM dbo.tRecintoAlfandegado tr
+INNER JOIN dbo.tDeclaracao td
+ON tr.iRecintoID = td.iRecintoID
+WITH CHECK OPTION
 GO
 --Fim da View
 

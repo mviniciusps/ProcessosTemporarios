@@ -105,7 +105,8 @@ Objetivo   : Mostrar todas as Apolices associadas ao Recinto Alfandegado, ou sej
 Criado em  : 02/04/2025
 Palavras-chave: Apolice
 ----------------------------------------------------------------------------------------------        
-Observações : FORMAT (para datas não aceita em VIEW)
+Observações : FORMAT (para datas não aceita em VIEW), WITH ENCRYPTION, SCHEMABINDING (não visualiza o codigo fonte,
+e impede de alterar a estrutura da tabela como colunas, CHEK OPTION (impede que faça alguma alteraçao SQL injection)
 
 ----------------------------------------------------------------------------------------------        
 Histórico:        
@@ -115,9 +116,10 @@ Marcus Paiva				 02/04/2025 Criação da Views
 Marcus Paiva				 02/04/2025 Trocad a seguinte sintaxe FORMAT(ta.dVencimentoGarantia, 'dd/MM/yyyy'),
 							 pois VIEWS não aceitam FORMAT
 */
-	CREATE OR ALTER VIEW vApoliceSeguroGarantia
+	CREATE OR ALTER VIEW dbo.vApoliceSeguroGarantia
+	WITH ENCRYPTION, SCHEMABINDING
 	AS
-	SELECT ta.cNumeroApolice AS [Número Apólice], ta.dVencimentoGarantia AS [Vencimento Apolice],
+	SELECT td.cReferenciaBraslog AS [Referência Braslog], ta.cNumeroApolice AS [Número Apólice], ta.dVencimentoGarantia AS [Vencimento Apólice],
 	CONCAT(tr.cNomeRecinto,' - ',tr.cCidadeRecinto,'/',
 		CASE
 			WHEN cEstadoRecinto = 'Bahia' THEN'BA'
@@ -129,9 +131,12 @@ Marcus Paiva				 02/04/2025 Trocad a seguinte sintaxe FORMAT(ta.dVencimentoGaran
 			WHEN cEstadoRecinto = 'Paraná' THEN 'PR'
 		END
 	) AS [Recinto Alfandegado]
-	FROM tApoliceSeguroGarantia ta
-	INNER JOIN tRecintoAlfandegado tr
+	FROM dbo.tApoliceSeguroGarantia ta
+	INNER JOIN dbo.tRecintoAlfandegado tr
 	ON ta.iRecintoID = tr.iRecintoID
+	INNER JOIN dbo.tDeclaracao td
+	ON ta.iApoliceID = td.iApoliceID
+	WITH CHECK OPTION
 	GO
 --Fim da View vApoliceSeguroGarantia
 

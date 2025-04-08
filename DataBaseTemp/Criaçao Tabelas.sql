@@ -342,3 +342,67 @@ CREATE TABLE tLOGEventos
 );
 GO
 -------------------------------------------------------------------------- END tLOGEventos
+/*
+*/
+-------------------------------------------------------------------------- BEGIN tCidade
+--START CREATING tCidade TABLE
+
+--sequence as id for table
+CREATE SEQUENCE seqCidadeID
+	AS INT
+	START WITH 1
+	INCREMENT BY 1;
+GO
+
+--creating tContrato using dinamic way with variables
+BEGIN TRANSACTION
+
+	SET NOCOUNT ON;	
+
+	BEGIN TRY
+
+		IF @@TRANCOUNT > 1
+		BEGIN
+			RAISERROR('There are open transactions, closing all...',10,1);
+			ROLLBACK;
+			RETURN;
+		END;
+				
+		DECLARE @NomeTabela NVARCHAR(128);
+		SET @NomeTabela = 'tCidade';
+
+		RAISERROR('table %s is been created...', 10, 1, @NomeTabela) WITH NOWAIT;
+
+		WAITFOR DELAY '00:00:05';
+
+		DECLARE @SQLCriarTabela NVARCHAR(MAX);
+		SET @SQLCriarTabela = 'CREATE TABLE ' + @NomeTabela + '(
+			iCidadeID INT NOT NULL DEFAULT(NEXT VALUE FOR seqCidadeID), --primary key
+			cCidade VARCHAR(100) NOT NULL, --unique values
+			cEstado VARCHAR(100) NOT NULL,
+			cEstadoSigla CHAR(2) NOT NULL,
+			CONSTRAINT PK_CidadeID PRIMARY KEY(iCidadeID),
+			CONSTRAINT UQ_Estado UNIQUE(cEstado)
+		)';
+				        
+		EXECUTE sp_executesql @SQLCriarTabela;
+
+		WAITFOR DELAY '00:00:05';
+		
+		RAISERROR( 'Tabela %s criada com sucesso', 10, 1, @NomeTabela) WITH NOWAIT;
+
+		COMMIT;
+
+	END TRY
+	BEGIN CATCH
+		
+		IF @@TRANCOUNT > 0
+		ROLLBACK;
+
+		--EXECUTE stp_ManipulaErro;
+
+	END CATCH
+
+	SELECT * FROM tCidade;
+GO
+-------------------------------------------------------------------------- END tCidade

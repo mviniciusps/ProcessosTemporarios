@@ -46,6 +46,30 @@
           <AssociatedConnUserName>sa</AssociatedConnUserName>
           <FullPath>tApoliceGarantiaQuery.sql</FullPath>
         </FileNode>
+        <FileNode Name="tCeMercanteQuery.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
+          <AssociatedConnUserName>sa</AssociatedConnUserName>
+          <FullPath>tCeMercanteQuery.sql</FullPath>
+        </FileNode>
+        <FileNode Name="tCNPJQuery.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
+          <AssociatedConnUserName>sa</AssociatedConnUserName>
+          <FullPath>tCNPJQuery.sql</FullPath>
+        </FileNode>
+        <FileNode Name="tContratoQuery.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
+          <AssociatedConnUserName>sa</AssociatedConnUserName>
+          <FullPath>tContratoQuery.sql</FullPath>
+        </FileNode>
+        <FileNode Name="tDeclaracaoQuery.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
+          <AssociatedConnUserName>sa</AssociatedConnUserName>
+          <FullPath>tDeclaracaoQuery.sql</FullPath>
+        </FileNode>
         <FileNode Name="tRecintoAlfandegadoQuery.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
