@@ -40,59 +40,11 @@
           <AssociatedConnUserName>sa</AssociatedConnUserName>
           <FullPath>Procedures.sql</FullPath>
         </FileNode>
-        <FileNode Name="tApoliceGarantiaQuery.sql">
+        <FileNode Name="Queries.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName>sa</AssociatedConnUserName>
-          <FullPath>tApoliceGarantiaQuery.sql</FullPath>
-        </FileNode>
-        <FileNode Name="tCidadeQuery.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
-          <AssociatedConnUserName>sa</AssociatedConnUserName>
-          <FullPath>tCidadeQuery.sql</FullPath>
-        </FileNode>
-        <FileNode Name="tCNPJQuery.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
-          <AssociatedConnUserName>sa</AssociatedConnUserName>
-          <FullPath>tCNPJQuery.sql</FullPath>
-        </FileNode>
-        <FileNode Name="tContratoQuery.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
-          <AssociatedConnUserName>sa</AssociatedConnUserName>
-          <FullPath>tContratoQuery.sql</FullPath>
-        </FileNode>
-        <FileNode Name="tDeclaracaoQuery.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
-          <AssociatedConnUserName>sa</AssociatedConnUserName>
-          <FullPath>tDeclaracaoQuery.sql</FullPath>
-        </FileNode>
-        <FileNode Name="tEstadoQuery.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
-          <AssociatedConnUserName>sa</AssociatedConnUserName>
-          <FullPath>tEstadoQuery.sql</FullPath>
-        </FileNode>
-        <FileNode Name="tLogisticaQuery.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
-          <AssociatedConnUserName>sa</AssociatedConnUserName>
-          <FullPath>tLogisticaQuery.sql</FullPath>
-        </FileNode>
-        <FileNode Name="tRecintoAlfandegadoQuery.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
-          <AssociatedConnUserName>sa</AssociatedConnUserName>
-          <FullPath>tRecintoAlfandegadoQuery.sql</FullPath>
-        </FileNode>
-        <FileNode Name="tRegimeAduaneiroQuery.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
-          <AssociatedConnUserName>sa</AssociatedConnUserName>
-          <FullPath>tRegimeAduaneiroQuery.sql</FullPath>
+          <FullPath>Queries.sql</FullPath>
         </FileNode>
         <FileNode Name="Triggers.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
