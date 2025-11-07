@@ -106,7 +106,7 @@ GO
 EXEC stp_CriaTabela
     @cSequenceNome = 'seqiContratoId',
     @cNomeTabela = 'tContrato',
-    @cNomeColunas = 'iContratoId|cNomeContrato|cNomeTipo|dContratoDataAssinatura|
+    @cNomeColunas = 'iContratoId|cNomeContrato|iContratoTipoId|dContratoDataAssinatura|
 					dContratoVencimento',
     @cTipoColunas = 'INT NOT NULL|VARCHAR(200) NOT NULL|VARCHAR(25) NOT NULL|
 					DATE|DATE';
@@ -117,6 +117,10 @@ ALTER TABLE tContrato
 
 ALTER TABLE tContrato
 	ADD CONSTRAINT CK_CONTRATO_VENCIMENTO CHECK(dContratoVencimento > dContratoDataAssinatura);
+
+ALTER TABLE tContrato
+	ADD CONSTRAINT FK_CONTRATO_CONTRATO_TIPO FOREIGN KEY(iContratoTipoId)
+	REFERENCES tContratoTipo(iContratoTipoId);
 
 GO
 
@@ -548,3 +552,18 @@ ALTER TABLE tDeclaracaoItem
 ALTER TABLE tDeclaracaoItem
 	ADD CONSTRAINT FK_DECLARACAO_ITEM_NCM FOREIGN KEY(iNcmId)
 	REFERENCES tNcm(iNcmId);
+
+--------------------------------------------------------------------------
+-- Tabela: tContratoTipo
+--------------------------------------------------------------------------
+EXEC stp_CriaTabela
+    @cSequenceNome = 'seqiContratoTipoId',
+    @cNomeTabela = 'tContratoTipo',
+    @cNomeColunas = 'iContratoTipoId|cContratoTipo',
+    @cTipoColunas = 'INT NOT NULL|VARCHAR(50)';
+
+ALTER TABLE tContratoTipo
+	ADD CONSTRAINT PK_CONTRATO_TIPO_ID PRIMARY KEY(iContratoTipoId);
+
+ALTER TABLE tContratoTipo
+	ADD CONSTRAINT UQ_CONTRATO_TIPO UNIQUE(cContratoTipo);
