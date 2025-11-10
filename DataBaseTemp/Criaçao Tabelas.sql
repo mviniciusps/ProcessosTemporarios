@@ -567,3 +567,22 @@ ALTER TABLE tContratoTipo
 
 ALTER TABLE tContratoTipo
 	ADD CONSTRAINT UQ_CONTRATO_TIPO UNIQUE(cContratoTipo);
+
+
+--------------------------------------------------------------------------
+-- Tabela: tLogEventos
+--------------------------------------------------------------------------
+EXEC stp_CriaTabela
+    @cSequenceNome = 'seqiEventoId',
+    @cNomeTabela = 'tLogEventos',
+    @cNomeColunas = 'iEventoId|dDataHoraEvento|cMensagemEvento',
+    @cTipoColunas = 'INT NOT NULL|DATE NOT NULL|VARCHAR(512) NOT NULL';
+
+ALTER TABLE tLogEventos
+	ADD CONSTRAINT PK_LOG_EVENTOS_ID PRIMARY KEY(iEventoId);
+
+ALTER TABLE tLogEventos
+	ADD CONSTRAINT DF_DATA_HORA DEFAULT(GETDATE()) FOR dDataHoraEvento;
+
+ALTER TABLE tLogEventos
+	ADD CONSTRAINT CK_MENSAGEM_EVENTO CHECK(cMensagemEvento <> '');
