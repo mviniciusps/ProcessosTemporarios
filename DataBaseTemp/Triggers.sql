@@ -1,10 +1,11 @@
 /*--------------------------------------------------------------------------------------------
 Tipo Objeto		: Trigger
-Nome Objeto		: tgr_tDeclaracao_insert
-Objetivo		: Trigger DML Calcular impostos ao inserir os dados necessários
+Nome Objeto		: TRG_VALORES_TAXA_SISCOMEX
+Objetivo		: Trigger DML Calcular setar taxa siscomex na coluna mTaxaSiscomex ao inserir
+				  os dados necessários
 Projeto			: ProcessosTemporarios          
 Criação			: 09/11/2025
-Execução		: Ao inserir o valo aduaneiro
+Execução		: Ao inserir o numero de adiçoes
 Palavra-chave   : trigger, insert
 ----------------------------------------------------------------------------------------------
 Observação		: AFTER -> Será executada após a inserção dos dados na mesma tabela
@@ -16,7 +17,7 @@ Autor						IDBug Data       Descrição
 ----------------------		----- ---------- -------------------------------------------------
 Marcus V. Paiva Silveira		  09/11/2025 Trigger criada */
 
-CREATE OR ALTER TRIGGER TRG_VALORES_CALCULO_ADUANEIRO
+CREATE OR ALTER TRIGGER TRG_VALORES_TAXA_SISCOMEX
 ON tValoresCalculoAduaneiro
 AFTER INSERT
 AS BEGIN
@@ -59,13 +60,72 @@ AS BEGIN
 		WHERE iValoresCalculoAduaneiroId = @iValoresCalculoAduaneiroId;
 
 	END TRY
-		BEGIN CATCH
+	BEGIN CATCH
 
-			IF @@TRANCOUNT > 0
-				ROLLBACK TRANSACTION;
+		IF @@TRANCOUNT > 0
+			ROLLBACK TRANSACTION;
 
-			EXECUTE stp_ManipulaErro;
+		EXECUTE stp_ManipulaErro;
 
-		END CATCH;
+	END CATCH;
 END
 GO
+
+/*--------------------------------------------------------------------------------------------
+Tipo Objeto		: Trigger
+Nome Objeto		: TRG_VALORES_DECLARACAO_ITEM
+Objetivo		: Trigger DML para preenchimento automático através do cálculo com valores
+				  prévios
+Projeto			: ProcessosTemporarios          
+Criação			: 13/11/2025
+Execução		: Ao inserir os campos que nao precisam de calculo (DI, NCM, Taxa Selic, Numero
+				  Prorrogação, ValorFOB, Peso Líquido, Taxa de Cambio);
+Palavra-chave   : trigger, insert
+----------------------------------------------------------------------------------------------
+Observação		: AFTER -> Será executada após a inserção dos dados na mesma tabela
+				  
+				  
+----------------------------------------------------------------------------------------------
+Histórico		:        
+Autor						IDBug Data       Descrição
+----------------------		----- ---------- -------------------------------------------------
+Marcus V. Paiva Silveira		  09/11/2025 Trigger criada */
+
+CREATE OR ALTER TRIGGER TRG_VALORES_DECLARACAO_ITEM
+ON tDeclaracaoItem
+AFTER INSERT
+AS BEGIN
+
+	SET NOCOUNT ON
+
+	BEGIN TRY
+
+		DECLARE @dDataSelic DATE;
+		DECLARE @mTaxaSelicAcumulada DECIMAL(18,2);
+		DECLARE @iDeclaracaoId INT;
+		DECLARE @mSeguro DECIMAL(18,2);
+		DECLARE @mFrete DECIMAL(18,2);
+		DECLARE @mValorFob DECIMAL(18,2);
+
+		SELECT
+			@iDeclaracaoId = iDeclaracaoId
+		FROM inserted;
+
+		SELECT * FROM tValoresCalculoAduaneiro;
+		SELECT * FROM tDeclaracaoItem;
+		SELECT * FROM tDeclaracao;
+		SELECT * FROM tLogistica;
+
+		SELECT * FROM tDeclaracao td JOIN tValoresCalculoAduaneiro tv WHERE td.
+
+	END TRY
+	BEGIN CATCH
+
+	END CATCH
+
+END
+GO
+
+BEGIN TRANSACTION
+SELECT @@TRANCOUNT
+COMMIT
