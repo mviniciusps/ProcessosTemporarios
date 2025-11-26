@@ -138,6 +138,12 @@ ALTER TABLE tRecinto
 	ADD CONSTRAINT FK_RECINTO_CEP FOREIGN KEY(iCepId)
 	REFERENCES tCep(iCepId);
 
+ALTER TABLE tRecinto
+	ADD CONSTRAINT UQ_NUMERO_RECINTO UNIQUE(cNumeroRecintoAduaneiro);
+
+ALTER TABLE tRecinto
+	ADD CONSTRAINT UQ_NOME_RECINTO UNIQUE(cNomeRecinto);
+
 GO
 
 --------------------------------------------------------------------------
@@ -171,8 +177,8 @@ GO
 EXEC stp_CriaTabela
 @cSequenceNome = 'seqiTaxaCambioId',
 @cNomeTabela = 'tTaxaCambio',
-@cNomeColunas = 'iTaxaCambioId|dDataRegistro|cCodigoMoeda|mTaxaCambio',
-@cTipoColunas = 'INT NOT NULL|DATE NOT NULL|CHAR(3) NOT NULL|DECIMAL(5,4)';
+@cNomeColunas = 'dDataRegistro|cCodigoMoeda|mTaxaCambio',
+@cTipoColunas = 'DATE NOT NULL|CHAR(3) NOT NULL|DECIMAL(5,4) NOT NULL';
 
 ALTER TABLE tTaxaCambio
 	ADD CONSTRAINT PK_COMPOSTA_TAXA_CAMBIO_E_DATA_REGISTRO PRIMARY KEY(dDataRegistro, cCodigoMoeda);
@@ -242,41 +248,21 @@ ALTER TABLE tPais
 GO
 
 --------------------------------------------------------------------------
--- Tabela: tCidadeEmbarque
+-- Tabela: tCidadeExterior
 --------------------------------------------------------------------------
 EXEC stp_CriaTabela
     @cSequenceNome = 'seqiCidadeEmbarqueId',
-    @cNomeTabela = 'tCidadeEmbarque',
-    @cNomeColunas = 'iCidadeEmbarqueId|iPaisId|cNomeCidadeEmbarque',
+    @cNomeTabela = 'tCidadeExterior',
+    @cNomeColunas = 'iCidadeExteriorId|iPaisId|cNomeCidadeExterior',
     @cTipoColunas = 'INT NOT NULL|INT NOT NULL|VARCHAR(100) NOT NULL';
 
-ALTER TABLE tCidadeEmbarque
-	ADD CONSTRAINT PK_CIDADE_EMBARQUE PRIMARY KEY(iCidadeEmbarqueId);
+ALTER TABLE tCidadeExterior
+	ADD CONSTRAINT PK_CIDADE_EXTERIOR PRIMARY KEY(iCidadeExteriorId);
 
-ALTER TABLE tCidadeEmbarque
-	ADD CONSTRAINT FK_CIDADE_EMBARQUE_PAIS FOREIGN KEY(iPaisId)
+ALTER TABLE tCidadeExterior
+	ADD CONSTRAINT FK_CIDADE_EXTERIOR_PAIS FOREIGN KEY(iPaisId)
 	REFERENCES tPais(iPaisId);
 
-GO
-
---------------------------------------------------------------------------
--- Tabela: tLocalEmbarque
---------------------------------------------------------------------------
-EXEC stp_CriaTabela
-    @cSequenceNome = 'seqiLocalEmbarqueId',
-    @cNomeTabela = 'tLocalEmbarque',
-    @cNomeColunas = 'iLocalEmbarqueId|iCidadeEmbarqueId|cLocalEmbarque',
-    @cTipoColunas = 'INT NOT NULL|INT NOT NULL|VARCHAR(100) NOT NULL';
-
-ALTER TABLE tLocalEmbarque
-	ADD CONSTRAINT PK_LOCAL_EMBARQUE PRIMARY KEY(iLocalEmbarqueId);
-
-ALTER TABLE tLocalEmbarque
-	ADD CONSTRAINT FK_LOCAL_EMBARQUE_CIDADE_EMBARQUE FOREIGN KEY(iCidadeEmbarqueId)
-	REFERENCES tCidadeEmbarque(iCidadeEmbarqueId);
-
-ALTER TABLE tLocalEmbarque
-	ADD CONSTRAINT UQ_LOCAL_EMBARQUE UNIQUE(cLocalEmbarque);
 
 GO
 
@@ -358,10 +344,10 @@ GO
 EXEC stp_CriaTabela
     @cSequenceNome = 'seqiLogisticaId',
     @cNomeTabela = 'tLogistica',
-    @cNomeColunas = 'iLogisticaId|iCeId|iModalId|iLocalEmbarqueId|
-					cConhecimentoEmbarque|dDataEmbarque|dDataChegadaBrasil|mFrete',
-    @cTipoColunas = 'INT NOT NULL|INT|INT NOT NULL|INT|VARCHAR(50) NOT NULL|DATE|
-					DATE|DECIMAL(18,2)';
+    @cNomeColunas = 'iLogisticaId|iCeId|iModalId|iLocalEmbarqueId|cConhecimentoEmbarque|
+					dDataEmbarque|dDataChegadaBrasil|mFrete',
+   @cTipoColunas = 'INT NOT NULL|INT|INT NOT NULL|INT NOT NULL|VARCHAR(50) NOT NULL|DATE
+					|DATE|DECIMAL(18,2)';
 
 ALTER TABLE tLogistica
 	ADD CONSTRAINT PK_LOGISTICA_ID PRIMARY KEY(iLogisticaId);
@@ -380,6 +366,16 @@ ALTER TABLE tLogistica
 
 ALTER TABLE tLogistica
 	ADD CONSTRAINT CK_DATA_CHEGADA CHECK(dDataChegadaBrasil >= dDataEmbarque);
+
+ALTER TABLE tLogistica
+	ADD CONSTRAINT UQ_CONHECIMENTO_EMBARQUE UNIQUE(cConhecimentoEmbarque);
+
+ALTER TABLE tLogistica
+	ADD iCidadeExteriorId INT;
+
+ALTER TABLE tLogistica
+	ADD CONSTRAINT FK_LOGISTICA_CIDADE_EXTERIOR FOREIGN KEY(iCidadeExteriorId)
+	REFERENCES tCidadeExterior(iCidadeExteriorId);
 
 GO
 
@@ -442,6 +438,30 @@ ALTER TABLE tDeclaracaoItem
 ALTER TABLE tDeclaracaoItem
 	ADD CONSTRAINT FK_DECLARACAO_ITEM_NCM FOREIGN KEY(iNcmId)
 	REFERENCES tNcm(iNcmId);
+
+SELECT * FROM tDeclaracaoItem;
+
+GO
+
+--------------------------------------------------------------------------
+-- Tabela: tProrrogacao
+--------------------------------------------------------------------------
+EXEC stp_CriaTabela
+    @cSequenceNome = 'seqiProrrogacaoId',
+    @cNomeTabela = 'tProrrogacao',
+    @cNomeColunas = 'iProrrogacaoId|iDeclaracaoItemId|mTaxaSelicAcumulada|iProrrogacao|
+					mIiValorProrrogacao|mIpiValorProrrogacao|mPisValorProrrogacao|mCofinsValorProrrogacao|
+					mIcmsValorProrrogacao|dDataProrrogacao',
+    @cTipoColunas = 'INT NOT NULL|INT NOT NULL|DECIMAL(5,2)|INT NOT NULL|
+					DECIMAL(18,2) NOT NULL|DECIMAL(18,2) NOT NULL|DECIMAL(18,2) NOT NULL|DECIMAL(18,2) NOT NULL|
+					DECIMAL(18,2) NOT NULL|DATE NOT NULL';
+
+ALTER TABLE tProrrogacao
+	ADD CONSTRAINT PK_PRORROGACAO_ID PRIMARY KEY(iProrrogacaoId);
+
+ALTER TABLE tProrrogacao
+	ADD CONSTRAINT FK_PRORROGACAO_DECLARACAO_ITEM FOREIGN KEY (iDeclaracaoItemId)
+	REFERENCES tDeclaracaoItem(iDeclaracaoItemId);
 
 GO
 
@@ -539,6 +559,15 @@ ALTER TABLE tDeclaracao
 ALTER TABLE tDeclaracao
 	ADD CONSTRAINT CK_NUMERO_DECLARACAO CHECK (LEN(cNumeroDeclaracao) IN (10, 12));
 
+ALTER TABLE tDeclaracao
+	ADD CONSTRAINT UQ_NUMERO_DECLARACAO UNIQUE(cNumeroDeclaracao);
+
+ALTER TABLE tDeclaracao
+	ADD CONSTRAINT UQ_NUMERO_DOSSIE UNIQUE(cNumeroDossie);
+
+ALTER TABLE tDeclaracao
+	ADD CONSTRAINT UQ_NUMERO_PROCESSO_ADM UNIQUE(cNumeroProcessoAdministrativo);
+
 GO
 
 --------------------------------------------------------------------------
@@ -571,7 +600,7 @@ EXEC stp_CriaTabela
 @cSequenceNome = 'seqiProcessoId',
 @cNomeTabela = 'tProcesso',
 @cNomeColunas = 'iProcessoId|iDeclaracaoId|cReferenciaBraslog|cReferenciaCliente|cHistorico|bIsAtivo',
-@cTipoColunas = 'INT NOT NULL|INT NOT NULL|INT NOT NULL|CHAR(13)|VARCHAR(MAX) NOT NULL|BIT NOT NULL';
+@cTipoColunas = 'INT NOT NULL|INT NOT NULL|VARCHAR(50) NOT NULL|VARCHAR(13)|VARCHAR(MAX) NOT NULL|BIT NOT NULL';
 
 ALTER TABLE tProcesso
 	ADD CONSTRAINT PK_PROCESSO_ID PRIMARY KEY(iProcessoId);
