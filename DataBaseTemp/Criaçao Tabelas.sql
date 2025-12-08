@@ -1,4 +1,4 @@
-/*------------------------------------------------------------
+	/*------------------------------------------------------------
 Author   : Marcus Paiva
 DataBase : ProcessosTemporarios
 Objective: Transferir os dados de controle da planilha
@@ -41,7 +41,7 @@ EXEC stp_CriaTabela
     @cNomeTabela = 'tEstado',
     @cNomeColunas = 'iEstadoId|cEstadoNome|cEstadoSigla|mAliqIcms',
     @cTipoColunas = 'INT NOT NULL|VARCHAR(100) NOT NULL|CHAR(2) NOT NULL|
-					DECIMAL(5,2) NOT NULL';
+					DECIMAL(5,2)';
 GO
 
 ALTER TABLE tEstado
@@ -79,10 +79,9 @@ GO
 EXEC stp_CriaTabela
     @cSequenceNome = 'seqiCepId',
     @cNomeTabela = 'tCep',
-    @cNomeColunas = 'iCepId|iCidadeId|cCep|cNomeLogradouro|cNumeroLogradouro|
-					cBairroLogradouro',
+    @cNomeColunas = 'iCepId|iCidadeId|cCep|cNomeLogradouro|cBairroLogradouro',
     @cTipoColunas = 'INT NOT NULL|INT NOT NULL|CHAR(8) NOT NULL|
-					VARCHAR(100) NOT NULL|VARCHAR(20)|VARCHAR(100)';
+					VARCHAR(100) NOT NULL|VARCHAR(100)';
 
 ALTER TABLE tCep
 	ADD CONSTRAINT PK_CEP_ID PRIMARY KEY(iCepId);
@@ -193,8 +192,8 @@ EXEC stp_CriaTabela
     @cNomeTabela = 'tValoresCalculoAduaneiro',
     @cNomeColunas = 'iValoresCalculoAduaneiroId|dDataRegistro|cCodigoMoeda|mAdicoes|
 					mTaxaSiscomex|mSeguro',
-    @cTipoColunas = 'INT NOT NULL|DATE NOT NULL|CHAR(3) NOT NULL|INT NOT NULL|
-					DECIMAL(18,2) NOT NULL|DECIMAL(18,2)';
+    @cTipoColunas = 'INT NOT NULL|DATE NOT NULL|CHAR(3)|INT|
+					DECIMAL(18,2)|DECIMAL(18,2)';
 
 ALTER TABLE tValoresCalculoAduaneiro
 	ADD CONSTRAINT PK_VALOR_ADUANEIRO PRIMARY KEY(iValoresCalculoAduaneiroId);
@@ -297,7 +296,7 @@ EXEC stp_CriaTabela
     @cSequenceNome = 'seqiCeMercanteStatusId',
     @cNomeTabela = 'tCeMercanteStatus',
     @cNomeColunas = 'iCeMercanteStatusId|cStatusCe',
-    @cTipoColunas = 'INT NOT NULL|VARCHAR(25) NOT NULL';
+    @cTipoColunas = 'INT NOT NULL|VARCHAR(25)';
 GO
 
 ALTER TABLE tCeMercanteStatus
@@ -317,17 +316,14 @@ GO
 EXEC stp_CriaTabela
     @cSequenceNome = 'seqiCeId',
     @cNomeTabela = 'tCeMercante',
-    @cNomeColunas = 'iCeId|iCeMercanteStatusId|cNumeroCe|mOutrasDespesas|mTaxaUtilizaçaoMercante|
+    @cNomeColunas = 'iCeId|iCeMercanteStatusId|cNumeroCe|mOutrasDespesas|mTaxaUtilizacaoMercante|
 					mValorAfrmmSuspenso|mValorCapatazias',
-    @cTipoColunas = 'INT NOT NULL|INT NOT NULL|VARCHAR(15) NOT NULL|DECIMAL(18,2)|INT NOT NULL|
+    @cTipoColunas = 'INT NOT NULL|INT NOT NULL|VARCHAR(15)|DECIMAL(18,2)|INT|
 					DECIMAL(18,2)|DECIMAL(18,2)';
 GO
 
 ALTER TABLE tCeMercante
 	ADD CONSTRAINT PK_CE_ID PRIMARY KEY(iCeId);
-
-ALTER TABLE tCeMercante
-	ADD CONSTRAINT CK_CE_TAXA_UTILIZACAO_MERCANTE CHECK(mTaxaUtilizaçaoMercante = 20 OR mTaxaUtilizaçaoMercante IS NULL);
 
 ALTER TABLE tCeMercante
 	ADD CONSTRAINT UQ_NUMERO_CE UNIQUE(cNumeroCe);
@@ -386,7 +382,7 @@ EXEC stp_CriaTabela
     @cSequenceNome = 'seqiApoliceId',
     @cNomeTabela = 'tApolice',
     @cNomeColunas = 'iApoliceId|cNumeroApolice|dVencimentoGarantia|dValorSegurado',
-    @cTipoColunas = 'INT NOT NULL|INT NOT NULL|DATE NOT NULL|DECIMAL(18,2)';
+    @cTipoColunas = 'INT NOT NULL|INT NOT NULL|DATE|DECIMAL(18,2)';
 
 ALTER TABLE tApolice
 	ADD CONSTRAINT PK_APOLICE_ID PRIMARY KEY(iApoliceId);
@@ -521,7 +517,7 @@ EXEC stp_CriaTabela
 				iLogisticaId|iValoresCalculoAduaneiroId|cNumeroDeclaracao|dDataDesembaraco|
 				cNumeroDossie|cNumeroProcessoAdministrativo|cDescricao',
 @cTipoColunas = 'INT NOT NULL|INT NOT NULL|INT NOT NULL|INT|INT NOT NULL|INT NOT NULL|
-				INT NOT NULL|VARCHAR(12) NOT NULL|DATE|CHAR(15)|CHAR(17)|VARCHAR(MAX)';
+				INT|VARCHAR(12) NOT NULL|DATE|CHAR(15)|CHAR(17)|VARCHAR(MAX)';
 
 ALTER TABLE tDeclaracao
 	ADD CONSTRAINT PK_DECLARACO_ID PRIMARY KEY(iDeclaracaoId);
@@ -566,7 +562,11 @@ ALTER TABLE tDeclaracao
 	ADD CONSTRAINT UQ_NUMERO_DOSSIE UNIQUE(cNumeroDossie);
 
 ALTER TABLE tDeclaracao
-	ADD CONSTRAINT UQ_NUMERO_PROCESSO_ADM UNIQUE(cNumeroProcessoAdministrativo);
+DROP CONSTRAINT UQ_NUMERO_PROCESSO_ADM;
+
+CREATE UNIQUE NONCLUSTERED INDEX UQ_NUMERO_PROCESSO_ADM
+ON tDeclaracao(cNumeroProcessoAdministrativo)
+WHERE cNumeroProcessoAdministrativo IS NOT NULL;
 
 GO
 
