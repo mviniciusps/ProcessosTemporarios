@@ -526,17 +526,35 @@ BEGIN
         UPDATE tValoresCalculoAduaneiro SET cCodigoMoeda = @cCodigoMoeda, @mAdicoes = @mAdicoes, mTaxaSiscomex = @mTaxaSiscomex, mSeguro = @mSeguro WHERE iValoresCalculoAduaneiroId = @iValoresCalculoAduaneiroId;
 
         -- 4) tNcm
-        INSERT INTO tNcm (cNcm, mAliqIi, mAliqIpi, mAliqPis, mAliqCofins)
-        SELECT
-            LTRIM(RTRIM(ncm.value)), CAST(aliqii.value AS DECIMAL(5,2)), 
-            CAST(aliqipi.value AS DECIMAL(5,2)), CAST(aliqpis.value  AS DECIMAL(5,2)), CAST(aliqcofins.value  AS DECIMAL(5,2))
-        FROM
-            STRING_SPLIT(@cNcm, '|') ncm
-            JOIN STRING_SPLIT(@mAliqIi, '|') aliqii ON ncm.ordinal = aliqii.ordinal
-            JOIN STRING_SPLIT(@mAliqIpi, '|') aliqipi ON ncm.ordinal = aliqipi.ordinal
-            JOIN STRING_SPLIT(@mAliqPis, '|') aliqpis ON ncm.ordinal = aliqpis.ordinal
-            JOIN STRING_SPLIT(@mAliqCofins, '|') aliqcofins ON ncm.ordinal = aliqcofins.ordinal;
+        ;WITH ncmTabela AS(
+            SELECT
+                LTRIM(RTRIM(ncm.value)),
+                CAST(aliqii.value AS DECIMAL(5,2)) AS mAliqIi, 
+                CAST(aliqipi.value AS DECIMAL(5,2)) AS mAliqIpi,
+                CAST(aliqpis.value  AS DECIMAL(5,2)) AS mAliqPis,
+                CAST(aliqcofins.value  AS DECIMAL(5,2)) AS mAliqCofins
+            FROM
+                STRING_SPLIT(@cNcm, '|', 1) ncm
+                JOIN STRING_SPLIT(@mAliqIi, '|', 1) aliqii ON ncm.ordinal = aliqii.ordinal
+                JOIN STRING_SPLIT(@mAliqIpi, '|', 1) aliqipi ON ncm.ordinal = aliqipi.ordinal
+                JOIN STRING_SPLIT(@mAliqPis, '|', 1) aliqpis ON ncm.ordinal = aliqpis.ordinal
+                JOIN STRING_SPLIT(@mAliqCofins, '|', 1) aliqcofins ON ncm.ordinal = aliqcofins.ordinal;
+            )
 
+        MERGE tNcm AS alvo
+        USING ncmTabela AS fonte
+        ON alvo.cNcm = fonte.value
+
+        WHEN MATCHED THEN
+            UPDATE SET 
+                alvo.mAliqIi = fonte.mAliqIi,
+                alvo.mAliqIpi = fonte.mAliqIpi,
+                alvo.mAliqPis = fonte.mAliqPis,
+                alvo.mAliqCofins = fonte.mAliqCofins
+        WHEN NOT MATCHED THEN
+            INSERT INTO tNcm (cNcm, mAliqIi, mAliqIpi, mAliqPis, mAliqCofins)
+            VALUES (fonte.value, fonte.mAliqIi, fonte.mAliqIpi, fonte.mAliqPis, fonte.mAliqCofins);
+            
         -- 5) tDeclaracaoItem
         SET @iDeclaracaoID = SELECT current_value FROM sys.sequences WHERE NAME = 'seqiDeclaracaoId';
 
