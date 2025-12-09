@@ -234,6 +234,7 @@ Marcus V. Paiva Silveira		  26/11/2025 Stored criada
 Marcus V. Paiva Silveira    515   30/11/2025 Valor do Id inserido na variavel no if nao alocado
 Marcus V. Paiva Silveira		  04/12/2025 Parametros precisão receber mais de um valor
 Marcus V. Paiva Silveira		  08/12/2025 Padronização de SET statements e eliminação de redundâncias
+Marcus V. Paiva Silveira          08/12/2025 --iCeMercanteStatus sendo inserido como Nulo
 */
 CREATE OR ALTER PROCEDURE stp_InserirDados
     @cPaisNome NVARCHAR(100),
@@ -280,17 +281,15 @@ CREATE OR ALTER PROCEDURE stp_InserirDados
     @dContratoVencimentoPrestacaoServico DATE = NULL,
     @cContratoTipoPrestacaoServico NVARCHAR(50) = NULL,
     @cReferenciaBraslog NVARCHAR(50),
-    @cReferenciaCliente NVARCHAR(50)
+    @cReferenciaCliente NVARCHAR(50),
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @iPaisId INT, @iCidadeExteriorId INT, @iModalId INT, @iEstadoIdRecinto INT, @iEstadoIdCnpj INT,
+    DECLARE @iPaisId INT, @iCidadeExteriorId INT, @iModalId INT,    @iEstadoIdRecinto INT, @iEstadoIdCnpj INT,
             @iCidadeIdRecinto INT, @iCidadeIdCnpj INT, @iCepIdRecinto INT, @iCepIdCnpj INT, @iCnpjId INT,
-            @iApoliceId INT, @iCeMercanteStatusId INT, @iCeId INT, @iLogisticaId INT, @iRegimeAduaneiroId INT,
-            @iValoresCalculoAduaneiroId INT, @iRecintoId INT, @iUrfId INT, @iDeclaracaoId INT,
-            @iContratoTipoIdPrestacao INT, @iContratoTipoIdAdmissao INT, @iContratoIdPrestacao INT,
-            @iContratoIdAdmissao INT;
+            @iApoliceId INT, @iCeMercanteStatusId INT, @iLogisticaId INT, @iRegimeAduaneiroId INT,
+            @iValoresCalculoAduaneiroId INT, @iRecintoId INT, @iUrfId INT, @iContratoTipoIdPrestacao INT, @iContratoTipoIdAdmissao INT, @iContratoIdPrestacao INT, @iContratoIdAdmissao INT, @iDeclaracaoID INT, @iCeId INT;
 
     BEGIN TRANSACTION;
     BEGIN TRY
@@ -350,12 +349,15 @@ BEGIN
         -- 12) tCeMercante e tCeMercanteStatus
         IF @cNumeroCe IS NOT NULL
         BEGIN
-            INSERT INTO tCeMercante (cNumeroCe, mValorAfrmmSuspenso) SELECT @cNumeroCe, @mValorAfrmmSuspenso 
+            INSERT INTO tCeMercanteStatus (cStatusCe) SELECT @cStatusCe WHERE NOT EXISTS (SELECT 1 FROM tCeMercanteStatus WHERE cStatusCe = @cStatusCe);            
+            
+            SET @iCeMercanteStatusId = (SELECT iCeMercanteStatusId FROM tCeMercanteStatus WHERE cStatusCe = @cStatusCe);
+
+            INSERT INTO tCeMercante (cNumeroCe, iCeMercanteStatusId, mValorAfrmmSuspenso) SELECT @cNumeroCe, @iCeMercanteStatusId,@mValorAfrmmSuspenso 
                 WHERE NOT EXISTS (SELECT 1 FROM tCeMercante WHERE cNumeroCe = @cNumeroCe);
+            
             SET @iCeId = (SELECT iCeId FROM tCeMercante WHERE cNumeroCe = @cNumeroCe);
         
-            INSERT INTO tCeMercanteStatus (cStatusCe) SELECT @cStatusCe WHERE NOT EXISTS (SELECT 1 FROM tCeMercanteStatus WHERE cStatusCe = @cStatusCe);            
-            SET @iCeMercanteStatusId = (SELECT iCeMercanteStatusId FROM tCeMercanteStatus WHERE cStatusCe = @cStatusCe);
         END
 
         -- 13) tLogistica
@@ -403,7 +405,7 @@ BEGIN
         BEGIN
             INSERT INTO tContratoTipo (cContratoTipo) SELECT @cContratoTipoPrestacaoServico 
                 WHERE NOT EXISTS (SELECT 1 FROM tContratoTipo WHERE cContratoTipo = @cContratoTipoPrestacaoServico);
-            SET @iContratoTipoIdPrestacao = (SELECT iContratoTipoId FROM tContratoTipo WHERE cContratoTipo = @cContratoTipoPrestacaoServico);
+            SET @iContratoTipoIdPrestacao =                             (SELECT iContratoTipoId FROM tContratoTipo WHERE cContratoTipo = @cContratoTipoPrestacaoServico);
         END
 
         -- 21) tContrato
@@ -427,6 +429,120 @@ BEGIN
             WHERE NOT EXISTS (SELECT 1 FROM tProcesso WHERE iDeclaracaoId = @iDeclaracaoId);
 
         COMMIT TRANSACTION;
+
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        EXEC stp_ManipulaErro;
+    END CATCH
+END
+GO
+
+/*--------------------------------------------------------------------------------------------        
+Tipo Objeto		: Stored Procedure
+Objeto Nome		: stp_InserirDadosProcessosImportacao
+Objetivo		: Inserir dados nas colunas relacionadas aos processos de Importação (utilização economica e
+                  suspernsão total)
+Projeto			: ProcessosTemporarios
+Criação			: 08/12/2025
+Execução		: Na inserção de dados
+Palavra-chave   : Insert
+----------------------------------------------------------------------------------------------        
+Observação		: 
+
+----------------------------------------------------------------------------------------------        
+Histórico		:        
+Autor						IDBug Data		Descrição
+----------------------		----- ---------- -------------------------------------------------
+Marcus V. Paiva Silveira		  08/12/2025 Stored criada
+*/
+
+CREATE OR ALTER PROCEDURE stp_InserirDadosProcessosImportacao
+@mValorFob VARCHAR(MAX),
+@mPesoLiquido VARCHAR(MAX),
+@mOutrasDespesas DECIMAL(18,2) = NULL,
+@mTaxaUtilizacaoMercante DECIMAL(4,2) = 20.00,
+@mValorCapatazias DECIMAL(18,2) = NULL,
+@mFrete DECIMAL(18,2),
+@cCodigoMoeda VARCHAR(MAX),
+@mAdicoes INT,
+@mSeguro DECIMAL(18,2) = NULL,
+@mTaxaCambio DECIMAL(8,7)
+@cNcm VARCHAR(MAX),
+@mAliqIi VARCHAR(MAX),
+@mAliqIpi VARCHAR(MAX),
+@mAliqPis VARCHAR(MAX),
+@mAliqCofins VARCHAR(MAX)
+AS 
+BEGIN
+
+    SET NOCOUNT ON;
+
+    DECLARE @iProrrogacaoId INT, @iDeclaracaoItemId INT, @iCeId INT, @iLogisticaID INT, @iValoresCalculoAduaneiroId INT, @dDataRegistro DATE, @iNcmId INT, @mTaxaSiscomex DECIMAL(18,2) = 115.67, @iContador INT = 1, @dDataProrrogacao DATE = GETDATE();
+
+
+    BEGIN TRANSACTION;
+    BEGIN TRY
+
+        -- 1) tCeMercante
+        SET @iCeId = SELECT current_value FROM sys.sequences WHERE NAME = 'seqiCeId';
+
+        UPDATE tCeMercante SET mOutrasDespesas = @mOutrasDespesas, mTaxaUtilizacaoMercante = @mTaxaUtilizacaoMercante, mValorCapatazias = @mValorCapatazias WHERE iCeId = @iCeId;
+
+        -- 2) tLogistica
+        SET @iLogisticaID = SELECT current_value FROM sys.sequences WHERE NAME = 'seqiLogisticaId';
+
+        UPDATE tLogistica SET mFrete = @mFrete WHERE iLogisticaId = @iLogisticaID;
+
+        -- 3) tTaxaCambio
+        SELECT TOP 1 @dDataRegistro = dDataRegistro FROM tValoresCalculoAduaneiro ORDER BY dDataRegistro DESC;
+
+        INSERT INTO tTaxaCambio (dDataRegistro, cCodigoMoeda, mTaxaCambio) SELECT @dDataRegistro, LTRIM(RTRIM(moeda.value)), CAST(taxa.value AS DECIMAL(18,6)) FROM STRING_SPLIT(@cCodigoMoeda, '|', 1) moeda JOIN STRING_SPLIT(@mTaxaCambio, '|', 1) taxa ON moeda.ordinal = taxa.ordinal;
+        
+        -- 3) tValoresCalculoAduaneiro
+        SET @iValoresCalculoAduaneiroId = SELECT current_value FROM sys.sequences WHERE NAME = 'seqiValoresCalculoAduaneiroId';
+        SET @cCodigoMoeda = SELECT TOP 1 cCodigoMoeda FROM tTaxaCambio WHERE dDataRegistro = @dDataRegistro ORDER BY cCodigoMoeda;
+
+        SELECT @@VERSION;
+
+        WHILE @iContador <= @mAdicoes
+        BEGIN
+            IF @iContador <= 2
+                SET @mTaxaSiscomex += 38.56;
+            ELSE IF @iContador BETWEEN 3 AND 5
+                SET @mTaxaSiscomex += 30.85;
+            ELSE IF @iContador BETWEEN 6 AND 10
+                SET @mTaxaSiscomex += 23.14;
+            ELSE IF @iContador BETWEEN 11 AND 20
+                SET @mTaxaSiscomex += 11.80;
+            ELSE IF @iContador BETWEEN 21 AND 50
+                SET @mTaxaSiscomex += 5.90;
+            ELSE
+                SET @mTaxaSiscomex += 2.95;
+
+            SET @iContador += 1;
+        END
+
+        UPDATE tValoresCalculoAduaneiro SET cCodigoMoeda = @cCodigoMoeda, @mAdicoes = @mAdicoes, mTaxaSiscomex = @mTaxaSiscomex, mSeguro = @mSeguro WHERE iValoresCalculoAduaneiroId = @iValoresCalculoAduaneiroId;
+
+        -- 4) tNcm
+        INSERT INTO tNcm (cNcm, mAliqIi, mAliqIpi, mAliqPis, mAliqCofins)
+        SELECT
+            LTRIM(RTRIM(ncm.value)), CAST(aliqii.value AS DECIMAL(5,2)), 
+            CAST(aliqipi.value AS DECIMAL(5,2)), CAST(aliqpis.value  AS DECIMAL(5,2)), CAST(aliqcofins.value  AS DECIMAL(5,2))
+        FROM
+            STRING_SPLIT(@cNcm, '|') ncm
+            JOIN STRING_SPLIT(@mAliqIi, '|') aliqii ON ncm.ordinal = aliqii.ordinal
+            JOIN STRING_SPLIT(@mAliqIpi, '|') aliqipi ON ncm.ordinal = aliqipi.ordinal
+            JOIN STRING_SPLIT(@mAliqPis, '|') aliqpis ON ncm.ordinal = aliqpis.ordinal
+            JOIN STRING_SPLIT(@mAliqCofins, '|') aliqcofins ON ncm.ordinal = aliqcofins.ordinal;
+
+        -- 5) tDeclaracaoItem
+        SET @iDeclaracaoID = SELECT current_value FROM sys.sequences WHERE NAME = 'seqiDeclaracaoId';
+
+        
+
+        -- 6) tProrrogacao
 
     END TRY
     BEGIN CATCH

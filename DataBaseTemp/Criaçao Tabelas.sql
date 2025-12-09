@@ -26,7 +26,7 @@ Date	 : 16/11/2025
 /*------------------------------------------------------------
 Author   : Marcus Paiva
 DataBase : ProcessosTemporarios
-Objective: Criaçao das tabelas através das Stored Procedures
+Objective: Criaï¿½ao das tabelas atravï¿½s das Stored Procedures
 		   e seus respectivos CONSTRAINTS
 Date	 : 26/10/2025
 ------------------------------------------------------------*/
@@ -561,9 +561,6 @@ ALTER TABLE tDeclaracao
 ALTER TABLE tDeclaracao
 	ADD CONSTRAINT UQ_NUMERO_DOSSIE UNIQUE(cNumeroDossie);
 
-ALTER TABLE tDeclaracao
-DROP CONSTRAINT UQ_NUMERO_PROCESSO_ADM;
-
 CREATE UNIQUE NONCLUSTERED INDEX UQ_NUMERO_PROCESSO_ADM
 ON tDeclaracao(cNumeroProcessoAdministrativo)
 WHERE cNumeroProcessoAdministrativo IS NOT NULL;
@@ -614,7 +611,7 @@ ALTER TABLE tProcesso
 
 ALTER TABLE tProcesso
 	ADD CONSTRAINT DF_HISTORICO DEFAULT(CONVERT(CHAR(10), GETDATE(), 103) + 
-	' - Processo incluído no controle') FOR cHistorico;
+	' - Processo incluï¿½do no controle') FOR cHistorico;
 
 ALTER TABLE tProcesso
 	ADD CONSTRAINT DF_IS_ATIVO DEFAULT(1) FOR bIsAtivo;
