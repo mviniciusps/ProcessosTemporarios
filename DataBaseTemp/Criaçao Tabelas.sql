@@ -182,6 +182,7 @@ EXEC stp_CriaTabela
 ALTER TABLE tTaxaCambio
 	ADD CONSTRAINT PK_COMPOSTA_TAXA_CAMBIO_E_DATA_REGISTRO PRIMARY KEY(dDataRegistro, cCodigoMoeda);
 
+
 GO
 
 --------------------------------------------------------------------------
@@ -316,9 +317,9 @@ GO
 EXEC stp_CriaTabela
     @cSequenceNome = 'seqiCeId',
     @cNomeTabela = 'tCeMercante',
-    @cNomeColunas = 'iCeId|iCeMercanteStatusId|cNumeroCe|mOutrasDespesas|mTaxaUtilizacaoMercante|
+    @cNomeColunas = 'iCeId|iCeMercanteStatusId|cNumeroCe|mOutrasDespesas|cCodigoMoeda|mTaxaUtilizacaoMercante|
 					mValorAfrmmSuspenso|mValorCapatazias',
-    @cTipoColunas = 'INT NOT NULL|INT NOT NULL|VARCHAR(15)|DECIMAL(18,2)|INT|
+    @cTipoColunas = 'INT NOT NULL|INT NOT NULL|VARCHAR(15)|DECIMAL(18,2)|CHAR(3)|INT|
 					DECIMAL(18,2)|DECIMAL(18,2)';
 GO
 
@@ -341,9 +342,9 @@ EXEC stp_CriaTabela
     @cSequenceNome = 'seqiLogisticaId',
     @cNomeTabela = 'tLogistica',
     @cNomeColunas = 'iLogisticaId|iCeId|iModalId|iLocalEmbarqueId|cConhecimentoEmbarque|
-					dDataEmbarque|dDataChegadaBrasil|mFrete',
+					dDataEmbarque|dDataChegadaBrasil|mFrete|cCodigoMoeda',
    @cTipoColunas = 'INT NOT NULL|INT|INT NOT NULL|INT NOT NULL|VARCHAR(50) NOT NULL|DATE
-					|DATE|DECIMAL(18,2)';
+					|DATE|DECIMAL(18,2)|CHAR(3)';
 
 ALTER TABLE tLogistica
 	ADD CONSTRAINT PK_LOGISTICA_ID PRIMARY KEY(iLogisticaId);

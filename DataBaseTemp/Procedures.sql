@@ -281,12 +281,12 @@ CREATE OR ALTER PROCEDURE stp_InserirDados
     @dContratoVencimentoPrestacaoServico DATE = NULL,
     @cContratoTipoPrestacaoServico NVARCHAR(50) = NULL,
     @cReferenciaBraslog NVARCHAR(50),
-    @cReferenciaCliente NVARCHAR(50),
+    @cReferenciaCliente NVARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @iPaisId INT, @iCidadeExteriorId INT, @iModalId INT,    @iEstadoIdRecinto INT, @iEstadoIdCnpj INT,
+    DECLARE @iPaisId INT, @iCidadeExteriorId INT, @iModalId INT, @iEstadoIdRecinto INT, @iEstadoIdCnpj INT,
             @iCidadeIdRecinto INT, @iCidadeIdCnpj INT, @iCepIdRecinto INT, @iCepIdCnpj INT, @iCnpjId INT,
             @iApoliceId INT, @iCeMercanteStatusId INT, @iLogisticaId INT, @iRegimeAduaneiroId INT,
             @iValoresCalculoAduaneiroId INT, @iRecintoId INT, @iUrfId INT, @iContratoTipoIdPrestacao INT, @iContratoTipoIdAdmissao INT, @iContratoIdPrestacao INT, @iContratoIdAdmissao INT, @iDeclaracaoID INT, @iCeId INT;
@@ -448,124 +448,220 @@ Criação			: 08/12/2025
 Execução		: Na inserção de dados
 Palavra-chave   : Insert
 ----------------------------------------------------------------------------------------------        
-Observação		: 
-
+Observação		: tNcm, tDeclaracaoItem e tProrrogacao precisam estar num procedure a parte;
+                  Precisa converter para INT (CONVERT(INT, current_value)) das sequences antes
+                  de atribuir
 ----------------------------------------------------------------------------------------------        
 Histórico		:        
 Autor						IDBug Data		Descrição
 ----------------------		----- ---------- -------------------------------------------------
 Marcus V. Paiva Silveira		  08/12/2025 Stored criada
+Marcus V. Paiva Silveira          20/12/2025 Variaveis para calculo aduaneiro precisam ser
+                                             inseridas antes de adicionar o NCM
+Marcus V. Paiva Silveira          547   24/12/2025 Conflito FK FK_DATA_REGISTRO_CODIGO_MOEDA ao inserir
+                                             dados pela procedure
 */
 
 CREATE OR ALTER PROCEDURE stp_InserirDadosProcessosImportacao
-@mValorFob VARCHAR(MAX),
-@mPesoLiquido VARCHAR(MAX),
-@mOutrasDespesas DECIMAL(18,2) = NULL,
-@mTaxaUtilizacaoMercante DECIMAL(4,2) = 20.00,
-@mValorCapatazias DECIMAL(18,2) = NULL,
-@mFrete DECIMAL(18,2),
-@cCodigoMoeda VARCHAR(MAX),
-@mAdicoes INT,
-@mSeguro DECIMAL(18,2) = NULL,
-@mTaxaCambio DECIMAL(8,7)
-@cNcm VARCHAR(MAX),
-@mAliqIi VARCHAR(MAX),
-@mAliqIpi VARCHAR(MAX),
-@mAliqPis VARCHAR(MAX),
-@mAliqCofins VARCHAR(MAX)
+    @mFrete DECIMAL(18,2),
+    @mOutrasDespesas DECIMAL(18,2) = NULL,
+    @mSeguro DECIMAL(18,2) = NULL,
+    @mAdicoes INT,
+    @mValorCapatazias DECIMAL(18,2) = NULL,
+    @mTaxaUtilizacaoMercante DECIMAL(4,2) = NULL,
+    @cCodigoMoeda VARCHAR(MAX),
+    @mTaxaCambio VARCHAR(MAX)
 AS 
 BEGIN
 
     SET NOCOUNT ON;
+    DECLARE 
+        @iCeId INT,
+        @iLogisticaID INT,
+        @iValoresCalculoAduaneiroId INT,
+        @dDataRegistro DATE,
+        @mTaxaSiscomex DECIMAL(18,2) = 115.67,
+        @iContador INT = 1,
+        @cCodigoMoedaSeguro CHAR(3),
+        @cCodigoMoedaOutrasDespesas CHAR(3),
+        @cCodigoMoedaFrete CHAR(3)
 
-    DECLARE @iProrrogacaoId INT, @iDeclaracaoItemId INT, @iCeId INT, @iLogisticaID INT, @iValoresCalculoAduaneiroId INT, @dDataRegistro DATE, @iNcmId INT, @mTaxaSiscomex DECIMAL(18,2) = 115.67, @iContador INT = 1, @dDataProrrogacao DATE = GETDATE();
-
-
-    BEGIN TRANSACTION;
-    BEGIN TRY
+        BEGIN TRANSACTION
+        BEGIN TRY
 
         -- 1) tCeMercante
-        SET @iCeId = SELECT current_value FROM sys.sequences WHERE NAME = 'seqiCeId';
+        SET @iCeId = (SELECT CONVERT(INT, current_value) FROM sys.sequences WHERE NAME = 'seqiCeId');
 
-        UPDATE tCeMercante SET mOutrasDespesas = @mOutrasDespesas, mTaxaUtilizacaoMercante = @mTaxaUtilizacaoMercante, mValorCapatazias = @mValorCapatazias WHERE iCeId = @iCeId;
+        SELECT @cCodigoMoedaOutrasDespesas = NULLIF(LTRIM(RTRIM(value)), '')
+        FROM STRING_SPLIT(@cCodigoMoeda, '|', 1)
+        WHERE ordinal = 3;
+
+        UPDATE tCeMercante SET mOutrasDespesas = @mOutrasDespesas, mTaxaUtilizacaoMercante = @mTaxaUtilizacaoMercante, mValorCapatazias = @mValorCapatazias, cCodigoMoeda = @cCodigoMoedaOutrasDespesas  WHERE iCeId = @iCeId;
 
         -- 2) tLogistica
-        SET @iLogisticaID = SELECT current_value FROM sys.sequences WHERE NAME = 'seqiLogisticaId';
+        SET @iLogisticaID = (SELECT CONVERT(INT, current_value) FROM sys.sequences WHERE NAME = 'seqiLogisticaId');
 
-        UPDATE tLogistica SET mFrete = @mFrete WHERE iLogisticaId = @iLogisticaID;
+        SELECT @cCodigoMoedaFrete = NULLIF(LTRIM(RTRIM(value)), '')
+        FROM STRING_SPLIT(@cCodigoMoedaFrete, '|', 1)
+        WHERE ordinal = 1;
+
+        UPDATE tLogistica SET mFrete = @mFrete, cCodigoMoeda = @cCodigoMoedaFrete WHERE iLogisticaId = @iLogisticaID;
 
         -- 3) tTaxaCambio
-        SELECT TOP 1 @dDataRegistro = dDataRegistro FROM tValoresCalculoAduaneiro ORDER BY dDataRegistro DESC;
+        SET @dDataRegistro = (SELECT tv.dDataRegistro FROM tDeclaracao td JOIN tValoresCalculoAduaneiro tv ON td.iValoresCalculoAduaneiroId = tv.iValoresCalculoAduaneiroId WHERE td.iDeclaracaoId = (SELECT current_value FROM sys.sequences WHERE NAME = 'seqiDeclaracaoId'));
 
-        INSERT INTO tTaxaCambio (dDataRegistro, cCodigoMoeda, mTaxaCambio) SELECT @dDataRegistro, LTRIM(RTRIM(moeda.value)), CAST(taxa.value AS DECIMAL(18,6)) FROM STRING_SPLIT(@cCodigoMoeda, '|', 1) moeda JOIN STRING_SPLIT(@mTaxaCambio, '|', 1) taxa ON moeda.ordinal = taxa.ordinal;
+        INSERT INTO tTaxaCambio (dDataRegistro, cCodigoMoeda, mTaxaCambio)
+        SELECT
+            @dDataRegistro,
+            LTRIM(RTRIM(moeda.value)) AS cCodigoMoeda,
+            CAST(LTRIM(RTRIM(taxa.value)) AS DECIMAL(18,6)) AS mTaxaCambio
+        FROM STRING_SPLIT(@cCodigoMoeda, '|', 1) moeda
+        JOIN STRING_SPLIT(@mTaxaCambio,  '|', 1) taxa
+            ON moeda.ordinal = taxa.ordinal
+        WHERE
+            LTRIM(RTRIM(moeda.value)) <> ''
+            AND LTRIM(RTRIM(taxa.value)) <> ''
+            AND NOT EXISTS (
+                SELECT 1
+                FROM tTaxaCambio tc
+                WHERE tc.dDataRegistro = @dDataRegistro
+                AND tc.cCodigoMoeda = LTRIM(RTRIM(moeda.value))
+            );        
         
         -- 3) tValoresCalculoAduaneiro
-        SET @iValoresCalculoAduaneiroId = SELECT current_value FROM sys.sequences WHERE NAME = 'seqiValoresCalculoAduaneiroId';
-        SET @cCodigoMoeda = SELECT TOP 1 cCodigoMoeda FROM tTaxaCambio WHERE dDataRegistro = @dDataRegistro ORDER BY cCodigoMoeda;
-
-        SELECT @@VERSION;
+        SELECT @iValoresCalculoAduaneiroId = CONVERT(INT, current_value) FROM sys.sequences WHERE name = 'seqiValoresCalculoAduaneiroId';
 
         WHILE @iContador <= @mAdicoes
-        BEGIN
-            IF @iContador <= 2
-                SET @mTaxaSiscomex += 38.56;
-            ELSE IF @iContador BETWEEN 3 AND 5
-                SET @mTaxaSiscomex += 30.85;
-            ELSE IF @iContador BETWEEN 6 AND 10
-                SET @mTaxaSiscomex += 23.14;
-            ELSE IF @iContador BETWEEN 11 AND 20
-                SET @mTaxaSiscomex += 11.80;
-            ELSE IF @iContador BETWEEN 21 AND 50
-                SET @mTaxaSiscomex += 5.90;
-            ELSE
-                SET @mTaxaSiscomex += 2.95;
+            BEGIN
+                SET @mTaxaSiscomex +=
+                    CASE
+                        WHEN @iContador <= 2 THEN 38.56
+                        WHEN @iContador BETWEEN 3 AND 5 THEN 30.85
+                        WHEN @iContador BETWEEN 6 AND 10 THEN 23.14
+                        WHEN @iContador BETWEEN 11 AND 20 THEN 11.80
+                        WHEN @iContador BETWEEN 21 AND 50 THEN 5.90
+                        ELSE 2.95
+                    END;
 
             SET @iContador += 1;
         END
 
-        UPDATE tValoresCalculoAduaneiro SET cCodigoMoeda = @cCodigoMoeda, @mAdicoes = @mAdicoes, mTaxaSiscomex = @mTaxaSiscomex, mSeguro = @mSeguro WHERE iValoresCalculoAduaneiroId = @iValoresCalculoAduaneiroId;
+        SELECT @cCodigoMoedaSeguro = NULLIF(LTRIM(RTRIM(value)), '')
+        FROM STRING_SPLIT(@cCodigoMoeda, '|', 1)
+        WHERE ordinal = 2;
 
-        -- 4) tNcm
-        ;WITH ncmTabela AS(
-            SELECT
-                LTRIM(RTRIM(ncm.value)),
-                CAST(aliqii.value AS DECIMAL(5,2)) AS mAliqIi, 
-                CAST(aliqipi.value AS DECIMAL(5,2)) AS mAliqIpi,
-                CAST(aliqpis.value  AS DECIMAL(5,2)) AS mAliqPis,
-                CAST(aliqcofins.value  AS DECIMAL(5,2)) AS mAliqCofins
-            FROM
-                STRING_SPLIT(@cNcm, '|', 1) ncm
-                JOIN STRING_SPLIT(@mAliqIi, '|', 1) aliqii ON ncm.ordinal = aliqii.ordinal
-                JOIN STRING_SPLIT(@mAliqIpi, '|', 1) aliqipi ON ncm.ordinal = aliqipi.ordinal
-                JOIN STRING_SPLIT(@mAliqPis, '|', 1) aliqpis ON ncm.ordinal = aliqpis.ordinal
-                JOIN STRING_SPLIT(@mAliqCofins, '|', 1) aliqcofins ON ncm.ordinal = aliqcofins.ordinal;
-            )
+        UPDATE tValoresCalculoAduaneiro
+            SET
+                cCodigoMoeda = @cCodigoMoedaSeguro,
+                mAdicoes = @mAdicoes,
+                mTaxaSiscomex = @mTaxaSiscomex,
+                mSeguro = @mSeguro
+            WHERE iValoresCalculoAduaneiroId = @iValoresCalculoAduaneiroId;
 
-        MERGE tNcm AS alvo
-        USING ncmTabela AS fonte
-        ON alvo.cNcm = fonte.value
 
-        WHEN MATCHED THEN
-            UPDATE SET 
-                alvo.mAliqIi = fonte.mAliqIi,
-                alvo.mAliqIpi = fonte.mAliqIpi,
-                alvo.mAliqPis = fonte.mAliqPis,
-                alvo.mAliqCofins = fonte.mAliqCofins
-        WHEN NOT MATCHED THEN
-            INSERT INTO tNcm (cNcm, mAliqIi, mAliqIpi, mAliqPis, mAliqCofins)
-            VALUES (fonte.value, fonte.mAliqIi, fonte.mAliqIpi, fonte.mAliqPis, fonte.mAliqCofins);
-            
-        -- 5) tDeclaracaoItem
-        SET @iDeclaracaoID = SELECT current_value FROM sys.sequences WHERE NAME = 'seqiDeclaracaoId';
-
-        
-
-        -- 6) tProrrogacao
+        COMMIT TRANSACTION;
 
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF @@TRANCOUNT > 0 
+            ROLLBACK TRANSACTION;
+
         EXEC stp_ManipulaErro;
     END CATCH
 END
 GO
+
+/*--------------------------------------------------------------------------------------------        
+Tipo Objeto		: Stored Procedure
+Objeto Nome		: stp_InserirNcmImportacao
+Objetivo		: Inserir NCM e retornar o calculo dos impostos (integral) por item
+Projeto			: ProcessosTemporarios
+Criação			: 24/12/2025
+Execução		: Na inserção de dados
+Palavra-chave   : Insert, Select
+----------------------------------------------------------------------------------------------        
+Observação		: 
+----------------------------------------------------------------------------------------------        
+Histórico		:        
+Autor						IDBug Data		Descrição
+----------------------		----- ---------- -------------------------------------------------
+Marcus V. Paiva Silveira		  24/12/2025 Stored criada
+*/
+CREATE OR ALTER PROCEDURE stp_CalcularValorAduaneiroItens
+    @cNcm CHAR(8),
+    @mFob DECIMAL(18,2),
+    @mPesoLiquido DECIMAL(18,2),
+    @cCodigoMoeda CHAR(3),
+    @mTaxaCambio DECIMAL(7,6),
+    @cCodigoMoedaOutrasDespesas CHAR(3) = NULL
+AS BEGIN
+
+    SET NOCOUNT ON;
+
+    DECLARE @iNcmId INT, @iDeclaracaoId INT, @mSeguro DECIMAL(18,2), @mFrete DECIMAL(18,2), @iValoresCalculoAduaneiroId INT, @iLogisticaId INT, @iCeId INT, @mValorFobTotal DECIMAL(18,2), @mValorPesoTotal DECIMAL(18,2), @mOutrasDespesas DECIMAL(18,2), @mValorAduaneiro DECIMAL(18,2), @mFobConvertido DECIMAL(18,2), @mSeguroConvertido DECIMAL(18,2), @mFreteConvertido DECIMAL(18,2), @mOutrasDespesasConvertido DECIMAL(18,2), @dDataRegistro DATE;
+
+    BEGIN TRANSACTION
+ 
+        BEGIN TRY
+
+            SET @iDeclaracaoId = (SELECT CONVERT(INT, current_value) FROM sys.sequences WHERE NAME = 'seqiDeclaracaoId');
+            SET @iLogisticaId = (SELECT CONVERT(INT, current_value) FROM sys.sequences WHERE NAME = 'seqiLogisticaId');
+            SET @iCeId = (SELECT CONVERT(INT, current_value) FROM sys.sequences WHERE NAME = 'seqiCeId');
+            SET @iValoresCalculoAduaneiroId = (SELECT CONVERT(INT, current_value) FROM sys.sequences WHERE NAME = 'seqiValoresCalculoAduaneiroId');
+            SET @mValorFobTotal = (SELECT SUM(mValorFob) FROM tDeclaracaoItem WHERE iDeclaracaoId = @iDeclaracaoId);
+            SET @mValorPesoTotal = (SELECT SUM(mPesoLiquido) FROM tDeclaracaoItem WHERE iDeclaracaoId = iDeclaracaoId);
+            SET @dDataRegistro = (SELECT tv.dDataRegistro FROM tDeclaracao td JOIN tValoresCalculoAduaneiro tv ON td.iValoresCalculoAduaneiroId = tv.iValoresCalculoAduaneiroId WHERE td.iDeclaracaoId = (SELECT current_value FROM sys.sequences WHERE NAME = 'seqiDeclaracaoId'));
+
+            --tTaxaCambio
+            INSERT INTO tTaxaCambio (dDataRegistro, cCodigoMoeda, mTaxaCambio)
+            SELECT @dDataRegistro, @cCodigoMoeda, @mTaxaCambio WHERE NOT EXISTS (SELECT 1 FROM tTaxaCambio WHERE dDataRegistro = @dDataRegistro AND cCodigoMoeda = @cCodigoMoeda);
+
+            --tNcm
+            INSERT INTO tNcm (cNcm) SELECT @cNcm WHERE NOT EXISTS (SELECT 1 FROM tNcm WHERE cNcm = @cNcm);
+            SET @iNcmId = (SELECT iNcmId FROM tNcm WHERE cNcm = @cNcm);
+
+            --tDeclaracaoItem            
+            INSERT INTO tDeclaracaoItem (iDeclaracaoId, iNcmId, mValorFob, mPesoLiquido) SELECT @iDeclaracaoId, @iNcmId, @mFob, @mPesoLiquido;
+
+                --Converter valores para R$
+
+                --Fob
+                SET @mFobConvertido = (SELECT ROUND(tdi.mValorFob * tx.mTaxaCambio, 2) AS 'Valor Fob Convertido' FROM tDeclaracaoItem tdi JOIN tDeclaracao td  ON tdi.iDeclaracaoId = td.iDeclaracaoId JOIN tValoresCalculoAduaneiro tv ON td.iValoresCalculoAduaneiroId = tv.iValoresCalculoAduaneiroId JOIN tTaxaCambio tx ON tx.dDataRegistro = tv.dDataRegistro AND tx.cCodigoMoeda = @cCodigoMoeda);
+
+                --Seguro
+                SET @mSeguro = (SELECT mSeguro FROM tValoresCalculoAduaneiro WHERE iValoresCalculoAduaneiroId = @iValoresCalculoAduaneiroId);
+                SET @mSeguroConvertido = (SELECT ROUND(tv.mSeguro * tx.mTaxaCambio, 2) AS 'Seguro Convertido' FROM tValoresCalculoAduaneiro tv JOIN tTaxaCambio tx ON tv.dDataRegistro = tx.dDataRegistro AND tv.cCodigoMoeda = tx.cCodigoMoeda WHERE tv.iValoresCalculoAduaneiroId = @iValoresCalculoAduaneiroId);
+
+                --Frete
+                SET @mFrete = (SELECT mFrete FROM tLogistica WHERE iLogisticaId = @iLogisticaId);
+                SET @mFreteConvertido = (SELECT ROUND(tl.mFrete * tx.mTaxaCambio, 2) AS 'Frete Convertido' FROM tLogistica tl JOIN tDeclaracao td ON tl.iLogisticaId = td.iLogisticaId JOIN tValoresCalculoAduaneiro tv ON tv.iValoresCalculoAduaneiroId = td.iValoresCalculoAduaneiroId JOIN tTaxaCambio tx ON tx.dDataRegistro = tv.dDataRegistro AND tx.cCodigoMoeda = tl.cCodigoMoeda WHERE tl.iLogisticaId = @iLogisticaId);
+
+                --Outras Despesas
+                SET @mOutrasDespesas = (SELECT mOutrasDespesas FROM tCeMercante WHERE iCeId = @iCeId);
+                SET @mOutrasDespesasConvertido =  (SELECT ROUND(tc.mOutrasDespesas * tx.mTaxaCambio, 2) AS 'Outras Despesas Convertido' FROM tCeMercante tc JOIN tLogistica tl ON tc.iCeId = tl.iCeId JOIN tDeclaracao td ON tl.iLogisticaId = td.iLogisticaId JOIN tValoresCalculoAduaneiro tv ON td.iValoresCalculoAduaneiroId = tv.iValoresCalculoAduaneiroId JOIN tTaxaCambio tx ON tx.dDataRegistro = tv.dDataRegistro AND tx.cCodigoMoeda = tc.cCodigoMoeda WHERE tc.iCeId = @iCeId);
+            
+                --Somar (Valor Aduaneiro)
+                UPDATE tDeclaracaoItem
+                SET mValorAduaneiro =
+                    @mFobConvertido + @mFreteConvertido + NULLIF(@mSeguroConvertido, ) + @mOutrasDespesasConvertido
+                WHERE iDeclaracaoId = @iDeclaracaoId;
+
+            --Ratear Mercante (caso haja)
+            --Ratear Taxa Siscomex
+            
+            SELECT td.iDeclaracaoItemId, td.iDeclaracaoId, (td.mValorFob * tv.mSeguro)/@mValorFobTotal AS Seguro FROM tDeclaracaoItem td JOIN tDeclaracao tde ON td.iDeclaracaoId = tde.iDeclaracaoId JOIN tValoresCalculoAduaneiro tv ON tde.iValoresCalculoAduaneiroId = tv.iValoresCalculoAduaneiroId;
+
+            COMMIT;
+
+        END TRY
+        BEGIN CATCH
+
+            IF @@TRANCOUNT > 0 
+                ROLLBACK TRANSACTION;
+
+            EXEC stp_ManipulaErro;
+
+        END CATCH
+END
+GO
+--tProrrogcao
