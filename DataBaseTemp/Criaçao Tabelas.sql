@@ -420,10 +420,8 @@ EXEC stp_CriaTabela
     @cNomeColunas = 'iDeclaracaoItemId|iDeclaracaoId|iNcmId|dDataProrrogacao|mTaxaSelicAcumulada|
 					iProrrogacao|mValorFob|mPesoLiquido|mValorAduaneiro|mIiValor|
 					mIpiValor|mPpisValor|mCofinsValor|mIcmsValor',
-    @cTipoColunas = 'INT NOT NULL|INT NOT NULL|INT NOT NULL|DATE NOT NULL|DECIMAL(5,2)|INT NOT NULL|
-					DECIMAL(18,2) NOT NULL|DECIMAL(18,2) NOT NULL|DECIMAL(18,2) NOT NULL|
-					DECIMAL(18,2) NOT NULL|DECIMAL(18,2) NOT NULL|DECIMAL(18,2) NOT NULL|
-					DECIMAL(18,2) NOT NULL|DECIMAL(18,2) NOT NULL';
+    @cTipoColunas = 'INT|INT|INT|DATE|DECIMAL(5,2)|INT|DECIMAL(18,2)|DECIMAL(18,2)|DECIMAL(18,2)|
+					DECIMAL(18,2)|DECIMAL(18,2)|DECIMAL(18,2)|DECIMAL(18,2)|DECIMAL(18,2)';
 
 ALTER TABLE tDeclaracaoItem
 	ADD CONSTRAINT PK_DECLARACAO_ITEM_ID PRIMARY KEY(iDeclaracaoItemId);
@@ -435,8 +433,6 @@ ALTER TABLE tDeclaracaoItem
 ALTER TABLE tDeclaracaoItem
 	ADD CONSTRAINT FK_DECLARACAO_ITEM_NCM FOREIGN KEY(iNcmId)
 	REFERENCES tNcm(iNcmId);
-
-SELECT * FROM tDeclaracaoItem;
 
 GO
 

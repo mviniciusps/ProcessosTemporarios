@@ -496,7 +496,7 @@ BEGIN
         FROM STRING_SPLIT(@cCodigoMoeda, '|', 1)
         WHERE ordinal = 3;
 
-        UPDATE tCeMercante SET mOutrasDespesas = @mOutrasDespesas, mTaxaUtilizacaoMercante = @mTaxaUtilizacaoMercante, mValorCapatazias = @mValorCapatazias, cCodigoMoeda = @cCodigoMoedaOutrasDespesas  WHERE iCeId = @iCeId;
+        UPDATE tCeMercante SET mOutrasDespesas = @mOutrasDespesas, mTaxaUtilizacaoMercante = @mTaxaUtilizacaoMercante, mValorCapatazias = @mValorCapatazias, cCodigoMoeda = @cCodigoMoedaOutrasDespesas WHERE iCeId = @iCeId;
 
         -- 2) tLogistica
         SET @iLogisticaID = (SELECT CONVERT(INT, current_value) FROM sys.sequences WHERE NAME = 'seqiLogisticaId');
@@ -573,7 +573,7 @@ GO
 
 /*--------------------------------------------------------------------------------------------        
 Tipo Objeto		: Stored Procedure
-Objeto Nome		: stp_InserirNcmImportacao
+Objeto Nome		: stp_CalcularValorAduaneiroItens
 Objetivo		: Inserir NCM e retornar o calculo dos impostos (integral) por item
 Projeto			: ProcessosTemporarios
 Criação			: 24/12/2025
@@ -592,64 +592,133 @@ CREATE OR ALTER PROCEDURE stp_CalcularValorAduaneiroItens
     @mFob DECIMAL(18,2),
     @mPesoLiquido DECIMAL(18,2),
     @cCodigoMoeda CHAR(3),
-    @mTaxaCambio DECIMAL(7,6),
-    @cCodigoMoedaOutrasDespesas CHAR(3) = NULL
+    @mTaxaCambio DECIMAL(7,6)
 AS BEGIN
 
     SET NOCOUNT ON;
 
-    DECLARE @iNcmId INT, @iDeclaracaoId INT, @mSeguro DECIMAL(18,2), @mFrete DECIMAL(18,2), @iValoresCalculoAduaneiroId INT, @iLogisticaId INT, @iCeId INT, @mValorFobTotal DECIMAL(18,2), @mValorPesoTotal DECIMAL(18,2), @mOutrasDespesas DECIMAL(18,2), @mValorAduaneiro DECIMAL(18,2), @mFobConvertido DECIMAL(18,2), @mSeguroConvertido DECIMAL(18,2), @mFreteConvertido DECIMAL(18,2), @mOutrasDespesasConvertido DECIMAL(18,2), @dDataRegistro DATE;
+    DECLARE
+        @iDeclaracaoId INT,
+        @iNcmId INT,
+        @iLogisticaId INT,
+        @iCeId INT,
+        @iValoresCalculoAduaneiroId INT,
+        @mValorFobTotal DECIMAL(18,2),
+        @mValorPesoTotal DECIMAL(18,2),
+        @dDataRegistro DATE;
 
     BEGIN TRANSACTION
- 
+
         BEGIN TRY
 
             SET @iDeclaracaoId = (SELECT CONVERT(INT, current_value) FROM sys.sequences WHERE NAME = 'seqiDeclaracaoId');
+            SET @dDataRegistro = (SELECT tv.dDataRegistro FROM tDeclaracao td JOIN tValoresCalculoAduaneiro tv ON td.iValoresCalculoAduaneiroId = tv.iValoresCalculoAduaneiroId WHERE td.iDeclaracaoId = @iDeclaracaoId);
             SET @iLogisticaId = (SELECT CONVERT(INT, current_value) FROM sys.sequences WHERE NAME = 'seqiLogisticaId');
-            SET @iCeId = (SELECT CONVERT(INT, current_value) FROM sys.sequences WHERE NAME = 'seqiCeId');
+            SELECT @iCeId = tl.iCeId FROM tDeclaracao td JOIN tLogistica tl ON td.iLogisticaId = tl.iLogisticaId WHERE td.iDeclaracaoId = @iDeclaracaoId;
             SET @iValoresCalculoAduaneiroId = (SELECT CONVERT(INT, current_value) FROM sys.sequences WHERE NAME = 'seqiValoresCalculoAduaneiroId');
-            SET @mValorFobTotal = (SELECT SUM(mValorFob) FROM tDeclaracaoItem WHERE iDeclaracaoId = @iDeclaracaoId);
-            SET @mValorPesoTotal = (SELECT SUM(mPesoLiquido) FROM tDeclaracaoItem WHERE iDeclaracaoId = iDeclaracaoId);
-            SET @dDataRegistro = (SELECT tv.dDataRegistro FROM tDeclaracao td JOIN tValoresCalculoAduaneiro tv ON td.iValoresCalculoAduaneiroId = tv.iValoresCalculoAduaneiroId WHERE td.iDeclaracaoId = (SELECT current_value FROM sys.sequences WHERE NAME = 'seqiDeclaracaoId'));
 
-            --tTaxaCambio
+            --tTaxaCambio (Inserir valor e moeda FOB)
             INSERT INTO tTaxaCambio (dDataRegistro, cCodigoMoeda, mTaxaCambio)
             SELECT @dDataRegistro, @cCodigoMoeda, @mTaxaCambio WHERE NOT EXISTS (SELECT 1 FROM tTaxaCambio WHERE dDataRegistro = @dDataRegistro AND cCodigoMoeda = @cCodigoMoeda);
 
             --tNcm
             INSERT INTO tNcm (cNcm) SELECT @cNcm WHERE NOT EXISTS (SELECT 1 FROM tNcm WHERE cNcm = @cNcm);
-            SET @iNcmId = (SELECT iNcmId FROM tNcm WHERE cNcm = @cNcm);
+            SET @iNcmId = (SELECT iNcmId FROM tNcm WHERE cNcm = @cNcm);            
 
             --tDeclaracaoItem            
             INSERT INTO tDeclaracaoItem (iDeclaracaoId, iNcmId, mValorFob, mPesoLiquido) SELECT @iDeclaracaoId, @iNcmId, @mFob, @mPesoLiquido;
 
-                --Converter valores para R$
+            SET @mValorFobTotal = (SELECT SUM(mValorFob) FROM tDeclaracaoItem WHERE iDeclaracaoId = @iDeclaracaoId);
+            SET @mValorPesoTotal = (SELECT SUM(mPesoLiquido) FROM tDeclaracaoItem WHERE iDeclaracaoId = @iDeclaracaoId);
 
-                --Fob
-                SET @mFobConvertido = (SELECT ROUND(tdi.mValorFob * tx.mTaxaCambio, 2) AS 'Valor Fob Convertido' FROM tDeclaracaoItem tdi JOIN tDeclaracao td  ON tdi.iDeclaracaoId = td.iDeclaracaoId JOIN tValoresCalculoAduaneiro tv ON td.iValoresCalculoAduaneiroId = tv.iValoresCalculoAduaneiroId JOIN tTaxaCambio tx ON tx.dDataRegistro = tv.dDataRegistro AND tx.cCodigoMoeda = @cCodigoMoeda);
+            UPDATE tdi
+            SET mValorAduaneiro =
+                ROUND(
+                    (tdi.mValorFob * @mTaxaCambio) + 
+                    (((tdi.mValorFob * tv.mSeguro) / @mValorFobTotal) * txSeg.mTaxaCambio) +
+                    (((tdi.mPesoLiquido * tl.mFrete) / @mValorPesoTotal) * txFre.mTaxaCambio) +
+                    (((tdi.mPesoLiquido * tc.mOutrasDespesas) / @mValorPesoTotal) * txOut.mTaxaCambio),
+                2)
+            FROM tDeclaracaoItem tdi
+            JOIN tDeclaracao td 
+                ON td.iDeclaracaoId = tdi.iDeclaracaoId
+            JOIN tValoresCalculoAduaneiro tv 
+                ON tv.iValoresCalculoAduaneiroId = td.iValoresCalculoAduaneiroId
+            JOIN tLogistica tl 
+                ON tl.iLogisticaId = td.iLogisticaId
+            JOIN tCeMercante tc 
+                ON tc.iCeId = tl.iCeId
 
-                --Seguro
-                SET @mSeguro = (SELECT mSeguro FROM tValoresCalculoAduaneiro WHERE iValoresCalculoAduaneiroId = @iValoresCalculoAduaneiroId);
-                SET @mSeguroConvertido = (SELECT ROUND(tv.mSeguro * tx.mTaxaCambio, 2) AS 'Seguro Convertido' FROM tValoresCalculoAduaneiro tv JOIN tTaxaCambio tx ON tv.dDataRegistro = tx.dDataRegistro AND tv.cCodigoMoeda = tx.cCodigoMoeda WHERE tv.iValoresCalculoAduaneiroId = @iValoresCalculoAduaneiroId);
+                -- taxa do SEGURO
+            JOIN tTaxaCambio txSeg 
+                ON txSeg.dDataRegistro = tv.dDataRegistro
+            AND txSeg.cCodigoMoeda = tv.cCodigoMoeda
 
-                --Frete
-                SET @mFrete = (SELECT mFrete FROM tLogistica WHERE iLogisticaId = @iLogisticaId);
-                SET @mFreteConvertido = (SELECT ROUND(tl.mFrete * tx.mTaxaCambio, 2) AS 'Frete Convertido' FROM tLogistica tl JOIN tDeclaracao td ON tl.iLogisticaId = td.iLogisticaId JOIN tValoresCalculoAduaneiro tv ON tv.iValoresCalculoAduaneiroId = td.iValoresCalculoAduaneiroId JOIN tTaxaCambio tx ON tx.dDataRegistro = tv.dDataRegistro AND tx.cCodigoMoeda = tl.cCodigoMoeda WHERE tl.iLogisticaId = @iLogisticaId);
+                -- taxa do FRETE
+            JOIN tTaxaCambio txFre 
+                ON txFre.dDataRegistro = tv.dDataRegistro
+            AND txFre.cCodigoMoeda = tl.cCodigoMoeda
 
-                --Outras Despesas
-                SET @mOutrasDespesas = (SELECT mOutrasDespesas FROM tCeMercante WHERE iCeId = @iCeId);
-                SET @mOutrasDespesasConvertido =  (SELECT ROUND(tc.mOutrasDespesas * tx.mTaxaCambio, 2) AS 'Outras Despesas Convertido' FROM tCeMercante tc JOIN tLogistica tl ON tc.iCeId = tl.iCeId JOIN tDeclaracao td ON tl.iLogisticaId = td.iLogisticaId JOIN tValoresCalculoAduaneiro tv ON td.iValoresCalculoAduaneiroId = tv.iValoresCalculoAduaneiroId JOIN tTaxaCambio tx ON tx.dDataRegistro = tv.dDataRegistro AND tx.cCodigoMoeda = tc.cCodigoMoeda WHERE tc.iCeId = @iCeId);
-            
-                --Somar (Valor Aduaneiro)
-                UPDATE tDeclaracaoItem
-                SET mValorAduaneiro =
-                    @mFobConvertido + @mFreteConvertido + NULLIF(@mSeguroConvertido, ) + @mOutrasDespesasConvertido
-                WHERE iDeclaracaoId = @iDeclaracaoId;
+                -- taxa das OUTRAS DESPESAS
+            JOIN tTaxaCambio txOut 
+                ON txOut.dDataRegistro = tv.dDataRegistro
+            AND txOut.cCodigoMoeda = tc.cCodigoMoeda
 
-            --Ratear Mercante (caso haja)
-            --Ratear Taxa Siscomex
-            
-            SELECT td.iDeclaracaoItemId, td.iDeclaracaoId, (td.mValorFob * tv.mSeguro)/@mValorFobTotal AS Seguro FROM tDeclaracaoItem td JOIN tDeclaracao tde ON td.iDeclaracaoId = tde.iDeclaracaoId JOIN tValoresCalculoAduaneiro tv ON tde.iValoresCalculoAduaneiroId = tv.iValoresCalculoAduaneiroId;
+            WHERE tdi.iDeclaracaoId = @iDeclaracaoId;
+
+            --RETORNA UM SELECT
+            SELECT 
+                tn.cNcm AS NCM,
+                ROUND(tdi.mValorFob, 2) AS FOB,
+                ROUND(tdi.mPesoLiquido, 2) AS PesoLiquido,
+
+                -- SEGURO (moeda do ValoresCalculoAduaneiro)
+                ROUND((tdi.mValorFob * tv.mSeguro) / @mValorFobTotal, 2) AS Seguro,
+
+                -- OUTRAS DESPESAS (moeda do CeMercante)
+                ROUND((tdi.mPesoLiquido * tc.mOutrasDespesas) / @mValorPesoTotal, 2) AS OutrasDespesas,
+
+                -- VALOR ADUANEIRO
+                ROUND(tdi.mValorAduaneiro, 2) AS 'Valor Aduaneiro',
+
+                -- MERCANTE
+                ROUND((tdi.mPesoLiquido * tc.mTaxaUtilizacaoMercante) / @mValorPesoTotal, 2) AS Mercante,
+
+                --TAXA SISCOMEX
+                ROUND((tdi.mValorFob * tv.mTaxaSiscomex) / @mValorFobTotal, 2) AS 'Taxa Siscomex'
+
+            FROM tDeclaracaoItem tdi
+            JOIN tNcm tn 
+                ON tn.iNcmId = tdi.iNcmId
+
+            JOIN tDeclaracao td 
+                ON td.iDeclaracaoId = tdi.iDeclaracaoId
+
+            JOIN tValoresCalculoAduaneiro tv 
+                ON tv.iValoresCalculoAduaneiroId = td.iValoresCalculoAduaneiroId
+
+            JOIN tLogistica tl 
+                ON tl.iLogisticaId = td.iLogisticaId
+
+            JOIN tCeMercante tc 
+                ON tc.iCeId = tl.iCeId
+
+            -- taxa do SEGURO / FOB
+            JOIN tTaxaCambio txSeg 
+                ON txSeg.dDataRegistro = tv.dDataRegistro
+            AND txSeg.cCodigoMoeda = tv.cCodigoMoeda
+
+            -- taxa do FRETE
+            JOIN tTaxaCambio txFre 
+                ON txFre.dDataRegistro = tv.dDataRegistro
+            AND txFre.cCodigoMoeda = tl.cCodigoMoeda
+
+            -- taxa das OUTRAS DESPESAS
+            JOIN tTaxaCambio txOut 
+                ON txOut.dDataRegistro = tv.dDataRegistro
+            AND txOut.cCodigoMoeda = tc.cCodigoMoeda
+
+            WHERE tdi.iDeclaracaoId = @iDeclaracaoId;
 
             COMMIT;
 
@@ -664,4 +733,3 @@ AS BEGIN
         END CATCH
 END
 GO
---tProrrogcao
