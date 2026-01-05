@@ -667,7 +667,9 @@ AS BEGIN
             WHERE tdi.iDeclaracaoId = @iDeclaracaoId;
 
             --RETORNA UM SELECT
-            SELECT 
+            SELECT
+                tdi.iDeclaracaoItemId,
+
                 tn.cNcm AS NCM,
                 ROUND(tdi.mValorFob, 2) AS FOB,
                 ROUND(tdi.mPesoLiquido, 2) AS PesoLiquido,
@@ -733,3 +735,90 @@ AS BEGIN
         END CATCH
 END
 GO
+
+/*--------------------------------------------------------------------------------------------        
+Tipo Objeto		: Stored Procedure
+Objeto Nome		: stp_CalcularImpostosItens
+Objetivo		: Inserir aliquotas dos tributos e calcular os tributos e o ICMS
+Projeto			: ProcessosTemporarios
+Criação			: 04/01/2026
+Execução		: Na inserção de dados
+Palavra-chave   : Insert, Select
+----------------------------------------------------------------------------------------------        
+Observação		: 
+----------------------------------------------------------------------------------------------        
+Histórico		:        
+Autor						IDBug Data		Descrição
+----------------------		----- ---------- -------------------------------------------------
+Marcus V. Paiva Silveira		  04/01/2026 Stored criada
+*/
+CREATE OR ALTER PROCEDURE stp_CalcularImpostosItens
+    @mAliqIi DECIMAL(5,2),
+    @mAliqIpi DECIMAL(5,2),
+    @mAliqPis DECIMAL(5,2),
+    @mAliqCofins DECIMAL(5,2),
+    @mAliqIcms DECIMAL(5,2),
+    @cNcm CHAR(8),
+    @iDeclaracaoItemId INT
+AS BEGIN
+
+    SET NOCOUNT ON;
+
+    DECLARE
+        @iNcmId INT,
+        @iDeclaracaoId INT
+
+    BEGIN TRANSACTION
+
+        BEGIN TRY
+
+            --Pode incluir todos os itens primeiro ou incluir o item e digitar as aliquotas para calcular os impostos;
+            --Quando adicionar um item/ncm no front a tela abaixo aparece com campo das aliquotas para preencher e a tela do ICMS ja preenchido porem habilitado para ediçao;
+            --Ao sair do campo das aliquotas preenchidas, calcular tributos;
+            --Ao inserir todos os itens e ir atualizando as aliquotas item a item, puxa o id do item, seu NCM e atualizar as aliquotas ou adicionar
+            SET @iDeclaracaoId = (SELECT CONVERT(INT, current_value) FROM sys.sequences WHERE NAME = 'seqiDeclaracaoId');
+            SET @iNcmId = (SELECT iNcmId FROM tDeclaracaoItem WHERE iDeclaracaoItemId = @iDeclaracaoItemId)
+
+            --ATUALIZA ALIQUOTAS DOS TRIBUTOS
+            UPDATE tn
+            SET
+            mAliqIi = CASE WHEN tn.mAliqIi IS NULL OR tn.mAliqIi <> @mAliqIi THEN (@mAliqIi/100) ELSE tn.mAliqIi END,
+            mAliqIpi = CASE WHEN tn.mAliqIpi IS NULL OR tn.mAliqIpi <> @mAliqIpi THEN (@mAliqIpi/100) ELSE tn.mAliqIpi END,
+            mAliqPis = CASE WHEN tn.mAliqPis IS NULL OR tn.mAliqPis <> @mAliqPis THEN (@mAliqPis/100) ELSE tn.mAliqPis END,
+            mAliqCofins  = CASE WHEN tn.mAliqCofins  IS NULL OR tn.mAliqCofins  <> (@mAliqCofins/100)  THEN @mAliqCofins  ELSE tn.mAliqCofins  END
+            FROM tNcm tn
+            WHERE tn.iNcmId = @iNcmId;
+
+            --ATUALIZA ALIQUOTAS DOS ICMS
+            UPDATE te
+            SET te.mAliqIcms = (@mAliqIcms/100)
+            FROM tEstado te
+            JOIN tCidade tci ON tci.iEstadoId = te.iEstadoId
+            JOIN tCep tc ON tc.iCidadeId = tci.iCidadeId
+            JOIN tRecinto tr ON tr.iCepId = tc.iCepId
+            JOIN tDeclaracao td ON td.iRecintoId = tr.iRecintoId
+            WHERE td.iDeclaracaoId = @iDeclaracaoId
+            AND te.mAliqIcms <> @mAliqIcms;
+
+            --CALCULA TRIBUTOS E ATUALIZA TABELA
+            UPDATE td
+            SET
+                td.mIiValor = td.mValorAduaneiro * tn.mAliqIi,
+                td.mIpiValor = (td.mValorAduaneiro + (td.mValorAduaneiro * tn.mAliqIi)) * tn.mAliqIpi,
+                td.mPisValor = td.mValorAduaneiro * tn.mAliqPis,
+                td.mCofinsValor = td.mValorAduaneiro * tn.mAliqCofins
+            FROM tDeclaracaoItem td JOIN tNcm tn ON td.iNcmId = tn.iNcmId
+            WHERE td.iDeclaracaoItemId = @iDeclaracaoItemId;
+
+        END TRY
+        BEGIN CATCH
+
+            IF @@TRANCOUNT > 0 
+                ROLLBACK TRANSACTION;
+
+            EXEC stp_ManipulaErro;
+
+        END CATCH
+END
+GO
+
