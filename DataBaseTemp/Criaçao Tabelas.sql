@@ -409,8 +409,15 @@ ALTER TABLE tNcm
 ALTER TABLE tNcm
 	ADD CONSTRAINT UQ_NCM UNIQUE(cNcm);
 
+CREATE TYPE dtNcm
+AS TABLE (
+    cNcm CHAR(8) NOT NULL,
+    mAliqIi DECIMAL(10,6) NOT NULL,
+    mAliqIpi DECIMAL(10,6) NOT NULL,
+    mAliqPis DECIMAL(10,6) NOT NULL,
+    mAliqCofins DECIMAL(10,6) NOT NULL
+);
 GO
-
 --------------------------------------------------------------------------
 -- Tabela: tDeclaracaoItem
 --------------------------------------------------------------------------
@@ -434,6 +441,20 @@ ALTER TABLE tDeclaracaoItem
 	ADD CONSTRAINT FK_DECLARACAO_ITEM_NCM FOREIGN KEY(iNcmId)
 	REFERENCES tNcm(iNcmId);
 
+DROP TYPE IF EXISTS dbo.dtDeclaracaoItem;
+GO
+
+CREATE TYPE dtDeclaracaoItem AS TABLE (
+    cNcm CHAR(8),
+    mValorFob DECIMAL(18,2),
+    mPesoLiquido DECIMAL(18,2),
+    mValorAduaneiro DECIMAL(18,2),
+    mIiValor DECIMAL(18,2),
+    mIpiValor DECIMAL(18,2),
+    mPisValor DECIMAL(18,2),
+    mCofinsValor DECIMAL(18,2),
+    mIcmsValor DECIMAL(18,2)
+);
 GO
 
 --------------------------------------------------------------------------
@@ -456,8 +477,18 @@ ALTER TABLE tProrrogacao
 	ADD CONSTRAINT FK_PRORROGACAO_DECLARACAO_ITEM FOREIGN KEY (iDeclaracaoItemId)
 	REFERENCES tDeclaracaoItem(iDeclaracaoItemId);
 
+CREATE TYPE dtProrrogacao AS TABLE (
+	cNcm CHAR(8),
+	mTaxaSelicAcumulada DECIMAL(5,2),
+	iProrrogacao INT,
+	mIiValorProrrogacao DECIMAL(5,2),
+	mIpiValorProrrogacao DECIMAL(5,2),
+	mPisValorProrrogacao DECIMAL(5,2),
+	mCofinsValorProrrogacao DECIMAL(5,2),
+	mIcmsValorProrrogacao DECIMAL(5,2),
+	dDataProrrogacao DATE
+);
 GO
-
 --------------------------------------------------------------------------
 -- Tabela: tContratoTipo
 --------------------------------------------------------------------------
