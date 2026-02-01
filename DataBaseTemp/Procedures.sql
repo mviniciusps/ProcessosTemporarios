@@ -100,9 +100,6 @@ Autor                  IDBug Data		Descrição
 ---------------------- ----- ---------- ------------------------------------------------------
 Marcus V. Paiva Silveira				29/10/2025 - Stored criada
 */
-USE ProcessosTemporarios;
-GO
-
 CREATE OR ALTER PROCEDURE stp_CriaTabela
     @cSequenceNome VARCHAR(50),
     @cNomeTabela VARCHAR(50),
@@ -598,9 +595,9 @@ BEGIN
 
         --tProrrogaçao
 		INSERT INTO tProrrogacao
-		(iDeclaracaoItemId, mTaxaSelicAcumulada, iProrrogacao, mIiValorProrrogacao, mIpiValorProrrogacao, mPisValorProrrogacao, mCofinsValorProrrogacao, mIcmsValorProrrogacao, dDataProrrogacao)
+		(iDeclaracaoItemId, mTaxaSelicAcumulada, iProrrogacao, mIiValorProrrogacao, mIpiValorProrrogacao, mPisValorProrrogacao, mCofinsValorProrrogacao, mIcmsValorProrrogacao, dDataProrrogacao, dVencimentoProrrogacao)
 		SELECT
-			td.iDeclaracaoItemId, tp.mTaxaSelicAcumulada, tp.iProrrogacao, tp.mIiValorProrrogacao, tp.mIpiValorProrrogacao, tp.mPisValorProrrogacao, tp.mCofinsValorProrrogacao, tp.mIcmsValorProrrogacao, tp.dDataProrrogacao
+			td.iDeclaracaoItemId, tp.mTaxaSelicAcumulada, tp.iProrrogacao, tp.mIiValorProrrogacao, tp.mIpiValorProrrogacao, tp.mPisValorProrrogacao, tp.mCofinsValorProrrogacao, tp.mIcmsValorProrrogacao, tp.dDataProrrogacao, tp.dVencimentoProrrogacao
 		FROM @tProrrogacao tp
 		JOIN tDeclaracaoItem td
 			ON td.iDeclaracaoId = @iDeclaracaoId

@@ -1,40 +1,78 @@
 /*--------------------------------------------------------------------------------------------        
 Tipo Objeto: View
-Objeto     : vDeclaracao
-Objetivo   : Mostrar todas as informaÁıes relevantes do processo
-Criado em  : 05/04/2025
-Palavras-chave: DeclaraÁ„o
+Objeto     : vTelaPrincipalAtivos
+Objetivo   : Tela principalAtivos, lista com todos os processos n√£o arquivados
+Criado em  : 01/02/2026
+Palavras-chave: Declaraca√ßao
 ----------------------------------------------------------------------------------------------        
-ObservaÁıes : 
-
+Observa√ß√µes :  Apenas mostrar Nome do Importador/Exportador, numero da Declara√ßao, Referencia
+               da Braslog, Referencia do Importador/Exportador, Prazo do regime atual;
 ----------------------------------------------------------------------------------------------        
-HistÛrico:        
-Autor                  IDBug Data       DescriÁ„o        
+Hist√≥rico:        
+Autor                  IDBug Data       Decri√ß√£o        
 ---------------------- ----- ---------- ------------------------------------------------------------        
-Marcus Paiva				 05/04/2025 CriaÁ„o da View
+Marcus Paiva				 01/02/2026 Cria√ß√£o da View
 */
-CREATE OR ALTER VIEW vDeclaracao
-WITH ENCRYPTION, SCHEMABINDING
+CREATE OR ALTER VIEW dbo.vTelaPrincipalAtivos
+WITH SCHEMABINDING
 AS
-    SELECT 
-        dbo.tDeclaracao.iDeclaracaoID AS ID,  -- Qualifiquei com dbo
-        UPPER(LEFT(dbo.tCNPJ.cNomeEmpresarial, CHARINDEX(' ', dbo.tCNPJ.cNomeEmpresarial))) AS Cliente,
-        CASE
-            WHEN LEN(dbo.tDeclaracao.cNumeroDeclaracao) > 10 THEN
-                LEFT(dbo.tDeclaracao.cNumeroDeclaracao, 2) + 'BR' +
-                SUBSTRING(dbo.tDeclaracao.cNumeroDeclaracao, 3, 9) + '-' +
-                RIGHT(dbo.tDeclaracao.cNumeroDeclaracao, 1)
-            WHEN LEN(dbo.tDeclaracao.cNumeroDeclaracao) = 10 THEN
-                LEFT(dbo.tDeclaracao.cNumeroDeclaracao, 2) + '/' +
-                SUBSTRING(dbo.tDeclaracao.cNumeroDeclaracao, 3, 7) + '-' +
-                RIGHT(dbo.tDeclaracao.cNumeroDeclaracao, 1)
-        END AS [DeclaraÁ„o de ImportaÁ„o],
-        dbo.tDeclaracao.cReferenciaBraslog AS [Referencia Braslog],
-        ISNULL(dbo.tDeclaracao.cReferenciaCliente, '') AS [Referencia Cliente],
-        dbo.tContrato.dContratoVencimento AS [Prazo solicitado]
-    FROM dbo.tDeclaracao
-    INNER JOIN dbo.tCNPJ ON dbo.tDeclaracao.iCNPJID = dbo.tCNPJ.iCNPJID
-    INNER JOIN dbo.tContrato ON dbo.tContrato.iContratoID = dbo.tDeclaracao.iContratoID
-WITH CHECK OPTION
+    SELECT
+        tn.cNomeEmpresa       AS cNomeCliente,
+        td.cNumeroDeclaracao  AS Declaracao,
+        tp.cReferenciaBraslog AS [Referencia Braslog],
+        tp.cReferenciaCliente AS [Referencia Cliente],
+        (
+            SELECT TOP (1) tpr.dVencimentoProrrogacao
+            FROM dbo.tDeclaracaoItem tdi2
+            JOIN dbo.tProrrogacao tpr
+                ON tpr.iDeclaracaoItemId = tdi2.iDeclaracaoItemId
+            WHERE tdi2.iDeclaracaoId = td.iDeclaracaoId
+        ) AS Prazo
+    FROM dbo.tProcesso tp
+    JOIN dbo.tDeclaracao td 
+        ON td.iDeclaracaoId = tp.iDeclaracaoId
+    JOIN dbo.tCnpj tn 
+        ON tn.iCnpjId = td.iCnpjId
+    WHERE tp.bIsAtivo = 1;
 GO
---FIM da VIEW vDeclaracao
+--FIM da VIEW vTelaPrincipalAtivos
+
+
+/*--------------------------------------------------------------------------------------------        
+Tipo Objeto: View
+Objeto     : vTelaPrincipalArquivados
+Objetivo   : Tela principalArquivados, lista com todos os processos n√£o arquivados
+Criado em  : 01/02/2026
+Palavras-chave: Declaraca√ßao
+----------------------------------------------------------------------------------------------        
+Observa√ß√µes :  Apenas mostrar Nome do Importador/Exportador, numero da Declara√ßao, Referencia
+               da Braslog, Referencia do Importador/Exportador, Prazo do regime atual;
+----------------------------------------------------------------------------------------------        
+Hist√≥rico:        
+Autor                  IDBug Data       Decri√ß√£o        
+---------------------- ----- ---------- ------------------------------------------------------------        
+Marcus Paiva				 01/02/2026 Cria√ß√£o da View
+*/
+CREATE OR ALTER VIEW dbo.vTelaPrincipalArquivados
+WITH SCHEMABINDING
+AS
+    SELECT
+        tn.cNomeEmpresa       AS cNomeCliente,
+        td.cNumeroDeclaracao  AS Declaracao,
+        tp.cReferenciaBraslog AS [Referencia Braslog],
+        tp.cReferenciaCliente AS [Referencia Cliente],
+        (
+            SELECT TOP (1) tpr.dVencimentoProrrogacao
+            FROM dbo.tDeclaracaoItem tdi2
+            JOIN dbo.tProrrogacao tpr
+                ON tpr.iDeclaracaoItemId = tdi2.iDeclaracaoItemId
+            WHERE tdi2.iDeclaracaoId = td.iDeclaracaoId
+        ) AS Prazo
+    FROM dbo.tProcesso tp
+    JOIN dbo.tDeclaracao td 
+        ON td.iDeclaracaoId = tp.iDeclaracaoId
+    JOIN dbo.tCnpj tn 
+        ON tn.iCnpjId = td.iCnpjId
+    WHERE tp.bIsAtivo = 0;
+GO
+--FIM da VIEW vTelaPrincipalArquivados
