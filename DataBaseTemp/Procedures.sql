@@ -600,14 +600,13 @@ BEGIN
 		INSERT INTO tProrrogacao
 		(iDeclaracaoItemId, mTaxaSelicAcumulada, iProrrogacao, mIiValorProrrogacao, mIpiValorProrrogacao, mPisValorProrrogacao, mCofinsValorProrrogacao, mIcmsValorProrrogacao, dDataProrrogacao)
 		SELECT
-			iDeclaracaoItemId, mTaxaSelicAcumulada, iProrrogacao, mIiValorProrrogacao, mIpiValorProrrogacao, mPisValorProrrogacao, mCofinsValorProrrogacao, mIcmsValorProrrogacao, dDataProrrogacao
+			td.iDeclaracaoItemId, tp.mTaxaSelicAcumulada, tp.iProrrogacao, tp.mIiValorProrrogacao, tp.mIpiValorProrrogacao, tp.mPisValorProrrogacao, tp.mCofinsValorProrrogacao, tp.mIcmsValorProrrogacao, tp.dDataProrrogacao
 		FROM @tProrrogacao tp
 		JOIN tDeclaracaoItem td
 			ON td.iDeclaracaoId = @iDeclaracaoId
 		JOIN tNcm tn
 			ON tn.iNcmId = td.iNcmId
 			AND tn.cNcm = tp.cNcm;
-		
 
         --tEstado (aliquota ICMS)
         UPDATE te

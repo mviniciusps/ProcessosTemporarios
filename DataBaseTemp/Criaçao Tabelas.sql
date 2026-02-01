@@ -481,11 +481,11 @@ CREATE TYPE dtProrrogacao AS TABLE (
 	cNcm CHAR(8),
 	mTaxaSelicAcumulada DECIMAL(5,2),
 	iProrrogacao INT,
-	mIiValorProrrogacao DECIMAL(5,2),
-	mIpiValorProrrogacao DECIMAL(5,2),
-	mPisValorProrrogacao DECIMAL(5,2),
-	mCofinsValorProrrogacao DECIMAL(5,2),
-	mIcmsValorProrrogacao DECIMAL(5,2),
+	mIiValorProrrogacao DECIMAL(18,2),
+	mIpiValorProrrogacao DECIMAL(18,2),
+	mPisValorProrrogacao DECIMAL(18,2),
+	mCofinsValorProrrogacao DECIMAL(18,2),
+	mIcmsValorProrrogacao DECIMAL(18,2),
 	dDataProrrogacao DATE
 );
 GO
