@@ -562,11 +562,7 @@ Date	 : 26/10/2025
 
 	ALTER TABLE tDeclaracao
 		ADD CONSTRAINT UQ_NUMERO_DOSSIE UNIQUE(cNumeroDossie);
-
-	CREATE UNIQUE NONCLUSTERED INDEX UQ_NUMERO_PROCESSO_ADM
-	ON tDeclaracao(cNumeroProcessoAdministrativo)
-	WHERE cNumeroProcessoAdministrativo IS;
-
+		
 	GO
 
 --------------------------------------------------------------------------

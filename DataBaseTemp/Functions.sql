@@ -1,79 +1,140 @@
-USE ProcessosTemporarios;
-GO
-
-BEGIN TRANSACTION;
-
-
 /*--------------------------------------------------------------------------------------------        
 Tipo Objeto: Function
-Objeto     : 
-Objetivo   : Mostrar todas as informaÁıes relevantes do processo
-Criado em  : 05/04/2025
-Palavras-chave: DeclaraÁ„o
+Objeto Nome: informacoesCadastroPorProcesso
+Objetivo   : Mostrar todas as informa√ß√µes relevantes do processo
+Criado em  : 05/02/2026
+Palavras-chave: Declara√ß√£o
 ----------------------------------------------------------------------------------------------        
-ObservaÁıes : 
+Observa√ß√µes : 
 
 ----------------------------------------------------------------------------------------------        
-HistÛrico:        
-Autor                  IDBug Data       DescriÁ„o        
+Hist√≥rico:        
+Autor                  IDBug Data       Descri√ß√£o        
 ---------------------- ----- ---------- ------------------------------------------------------------        
-Marcus Paiva				 05/04/2025 CriaÁ„o da View
+Marcus Paiva				 05/02/2026 Cria√ß√£o da Fun√ß√£o
 */
-CREATE FUNCTION dbo.infoProcesso(@iDeclaracaoID AS INT)
+CREATE OR ALTER FUNCTION informacoesCadastroPorProcesso(@iDeclaracaoId INT)
 RETURNS TABLE
 AS
 RETURN
+
 	SELECT
-	td.iDeclaracaoID AS ID,
-	td.cReferenciaBraslog AS 'Referencia Braslog', td.cReferenciaCliente AS 'Referencia Cliente',
-	CASE
-				WHEN LEN(td.cNumeroDeclaracao) > 10 THEN
-					LEFT(td.cNumeroDeclaracao, 2) + 'BR' +
-					SUBSTRING(td.cNumeroDeclaracao, 3, 9) + '-' +
-					RIGHT(td.cNumeroDeclaracao, 1)
-				WHEN LEN(td.cNumeroDeclaracao) = 10 THEN
-					LEFT(td.cNumeroDeclaracao, 2) + '/' +
-					SUBSTRING(td.cNumeroDeclaracao, 3, 7) + '-' +
-					RIGHT(td.cNumeroDeclaracao, 1)
-			END AS 'DeclaraÁ„o',
-	td.dDataRegistroDeclaracao AS 'Data do Registro', td.dDataDesembaracoDeclaracao AS 'Data de DesembaraÁo',
-	LEFT(td.cNumeroDOSSIE, 14) + '-' +
-	RIGHT(td.cNumeroDOSSIE, 1) AS 'N∫ DOSSIE',
-	td.cNumeroProcessoAdministrativo AS 'N∫ Processo E-CAC', td.cModal AS Modal, td.cDescricao 'DescriÁao da mercadoria', td.cHistorico 'Follow up',
-	tcn.cNomeEmpresarial AS 'Raz„o Social',
-	LEFT(tcn.cNumeroInscricao, 2) + '.' +
-		SUBSTRING(tcn.cNumeroInscricao, 3, 3) + '.' +
-		SUBSTRING(tcn.cNumeroInscricao, 6, 3) + '/' +
-		SUBSTRING(tcn.cNumeroInscricao, 9, 4) + '-' +
-		RIGHT(tcn.cNumeroInscricao, 2) AS CNPJ,
-	LEFT(tce.cNumeroCE,3) + '.' +
-	SUBSTRING(tce.cNumeroCE,4,3) + '.' +
-	SUBSTRING(tce.cNumeroCE,7,3) + '.' +
-	SUBSTRING(tce.cNumeroCE,10,3) + '.' +
-	RIGHT(tce.cNumeroCE,3)
-	AS 'CE Mercante n∫', tce.cStatusCE AS 'Status',
-	tco.cContratoTipo AS 'Tipo do Contrato', tco.cNumeroNomeContrato AS 'N∫ do Contrato', tco.dContratoDataAssinatura AS 'Data da Assinatura do Contrato',
-	tco.dContratoVencimento AS 'Vencimento da ProrrogaÁao',
-	tco.iNumeroProrrogacao AS 'N∫ da ProrrogaÁ„o',
-	ta.cNumeroApolice AS 'N∫ da Apolice', ta.dVencimentoGarantia AS 'Data vencimento da Garantia',
-	tr.cUnidadeReceitaFederal AS URF, tr.cNumeroRecintoAduaneiro AS RA, tr.cNomeRecinto AS 'Nome do Recinto Alfandegado'
+		tc.iCnpjId AS IdCnpj,
+		tc.cCnpj AS CNPJ,
+		tc.cNomeEmpresa AS RazaoSocial,
+		tr.cNomeRecinto AS RecintoAduaneiro,
+		tu.cNomeUnidadeReceitaFederal AS URF,
+		td.cNumeroDeclaracao AS Declaracao,
+		tv.dDataRegistro AS DataRegistroDeclaracao,
+		tl.cConhecimentoEmbarque AS ConhecimentoEmbarque,
+		tl.dDataChegadaBrasil AS DataChegadaBrasil,
+		tce.cNumeroCe AS CEMercante,
+		SUM(tdi.mPesoLiquido) AS PesoLiquido,
+		tci.cNomeCidadeExterior AS CidadeEmbarque,
+		td.cNumeroDossie AS Dossie,
+		td.cNumeroProcessoAdministrativo AS ECAC
 	FROM tDeclaracao td
-	LEFT JOIN tCNPJ tcn
-	ON tcn.iCNPJID = td.iCNPJID
-	LEFT JOIN tCeMercante tce
-	ON td.iCEID = tce.iCEID
-	LEFT JOIN tContrato tco
-	ON td.iContratoID = tco.iContratoID
-	LEFT JOIN tApoliceSeguroGarantia ta
-	ON td.iApoliceID = ta.iApoliceID
-	LEFT JOIN tRecintoAlfandegado tr
-	ON td.iRecintoID = tr.iRecintoID
-	WHERE td.iDeclaracaoID = @iDeclaracaoID
+	INNER JOIN tCNPJ tc 
+		ON tc.iCnpjId = td.iCnpjId
+	LEFT JOIN tRecinto tr 
+		ON td.iRecintoId = tr.iRecintoId
+	LEFT JOIN tUrf tu 
+		ON tr.iUrfId = tu.iUrfId
+	LEFT JOIN tValoresCalculoAduaneiro tv 
+		ON td.iValoresCalculoAduaneiroId = tv.iValoresCalculoAduaneiroId
+	LEFT JOIN tLogistica tl 
+		ON td.iLogisticaId = tl.iLogisticaId
+	LEFT JOIN tCeMercante tce 
+		ON tl.iCeId = tce.iCeId
+	LEFT JOIN tDeclaracaoItem tdi 
+		ON td.iDeclaracaoId = tdi.iDeclaracaoId
+	LEFT JOIN tCidadeExterior tci 
+		ON tl.iCidadeExteriorId = tci.iCidadeExteriorId
+	WHERE td.iDeclaracaoId = @iDeclaracaoId
+	GROUP BY
+		tc.iCnpjId,
+		tc.cCnpj,
+		tc.cNomeEmpresa,
+		tr.cNomeRecinto,
+		tu.cNomeUnidadeReceitaFederal,
+		td.cNumeroDeclaracao,
+		tv.dDataRegistro,
+		tl.cConhecimentoEmbarque,
+		tl.dDataChegadaBrasil,
+		tce.cNumeroCe,
+		tci.cNomeCidadeExterior,
+		td.cNumeroDossie,
+		td.cNumeroProcessoAdministrativo;
 
-SELECT @@TRANCOUNT
+/*--------------------------------------------------------------------------------------------        
+Tipo Objeto: Function
+Objeto Nome: contratosPorDeclaracao
+Objetivo   : Mostrar todos os contratos por Declara√ßao
+Criado em  : 08/02/2026
+Palavras-chave: Declara√ß√£o, Contrato
+----------------------------------------------------------------------------------------------        
+Observa√ß√µes : 
 
-SELECT * FROM dbo.infoProcesso(10);
-DROP function dbo.infoProcesso;
+----------------------------------------------------------------------------------------------        
+Hist√≥rico:        
+Autor                  IDBug Data       Descri√ß√£o        
+---------------------- ----- ---------- ------------------------------------------------------------        
+Marcus Paiva				 08/02/2026 Cria√ß√£o da Fun√ß√£o
+*/
+CREATE OR ALTER FUNCTION contratosPorDeclaracao(@iDeclaracaoId INT)
+RETURNS TABLE
+AS
+RETURN
 
-SELECT * FROM tDeclaracao
-SELECT * FROM vDeclaracao
+	SELECT
+        tco.iContratoId AS idContrato,
+        tco.cNomeContrato AS NumeroContrato,
+        tco.dContratoVencimento AS VencimentoContrato
+    FROM tContratoDeclaracao tcd
+    JOIN tContrato tco 
+        ON tcd.iContratoId = tco.iContratoId
+    WHERE tcd.iDeclaracaoId = @iDeclaracaoId;
+
+/*--------------------------------------------------------------------------------------------        
+Tipo Objeto: Function
+Objeto Nome: informacoesGeraisPorProrrogacaoProcesso
+Objetivo   : Mostrar de forma geral o periodo e os tributos da prorrogacao atual
+Criado em  : 08/02/2026
+Palavras-chave: Vencimento, Tributos
+----------------------------------------------------------------------------------------------        
+Observa√ß√µes : 
+
+----------------------------------------------------------------------------------------------        
+Hist√≥rico:        
+Autor                  IDBug Data       Descri√ß√£o        
+---------------------- ----- ---------- ------------------------------------------------------------        
+Marcus Paiva				 08/02/2026 Cria√ß√£o da Fun√ß√£o
+*/
+CREATE OR ALTER FUNCTION informacoesGeraisPorProrrogacaoProcesso(@iDeclaracaoId INT)
+RETURNS TABLE
+AS
+RETURN
+	
+	SELECT 
+    tp.iProrrogacao AS Prorrogacao,
+    tp.dDataProrrogacao AS InicioProrrogacao,
+    tp.dVencimentoProrrogacao AS VencimentoProrrogacao,
+    tde.dDataDesembaraco AS InicioRegime,
+    SUM(
+        ISNULL(td.mIiValor, 0) +
+        ISNULL(td.mIpiValor, 0) +
+        ISNULL(td.mPisValor, 0) +
+        ISNULL(td.mCofinsValor, 0) +
+        ISNULL(td.mIcmsValor, 0)
+    ) AS Impostos
+	FROM tDeclaracao tde
+	LEFT JOIN tDeclaracaoItem td
+		ON tde.iDeclaracaoId = td.iDeclaracaoId
+	LEFT JOIN tProrrogacao tp
+		ON tp.iDeclaracaoItemId = td.iDeclaracaoItemId
+	WHERE tde.iDeclaracaoId = @iDeclaracaoId
+	GROUP BY
+		tp.iProrrogacao,
+		tp.dDataProrrogacao,
+		tp.dVencimentoProrrogacao,
+		tde.dDataDesembaraco;
