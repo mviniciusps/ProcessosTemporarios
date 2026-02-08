@@ -460,16 +460,16 @@ Marcus V. Paiva Silveira          547   24/12/2025 Conflito FK FK_DATA_REGISTRO_
 */
 CREATE OR ALTER PROCEDURE stp_InserirDadosProcessosImportacao
     -- LOGÍSTICA / MERCANTE
-    @iCeId INT = NULL, --Recupera iCeId para inserir OutrasDespesas, e Capatazias do front (valor vem do back)
-    @iLogisticaId INT, --Inserir valor do Frete
-    @iValoresCalculoAduaneiroId INT, --Inserir valor do Seguro
-    @iDeclaracaoId INT, --Inserir Id no tDeclaracaoItem
+    @iCeId INT = NULL,
+    @iLogisticaId INT,
+    @iValoresCalculoAduaneiroId INT,
+    @iDeclaracaoId INT,
 
     @mFrete DECIMAL(18,2),
     @mOutrasDespesas DECIMAL(18,2) = NULL,
     @mSeguro DECIMAL(18,2) = NULL,
     @mValorCapatazias DECIMAL(18,2) = NULL,
-    @mTaxaUtilizacaoMercante DECIMAL(4,2) = NULL, --Do backend tem que vir 20 (atual)
+    @mTaxaUtilizacaoMercante DECIMAL(4,2) = NULL,
 
     -- TAXAS DE CÂMBIO
     @dDataRegistro DATE,
