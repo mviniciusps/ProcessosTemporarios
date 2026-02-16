@@ -529,11 +529,11 @@ BEGIN
         FROM
         (
             SELECT @cCodigoMoedaFob, @mTaxaCambioFob
-            UNION ALL
+            UNION
             SELECT @cCodigoMoedaFrete, @mTaxaCambioFrete
-            UNION ALL
+            UNION
             SELECT @cCodigoMoedaSeguro, @mTaxaCambioSeguro
-            UNION ALL
+            UNION
             SELECT @cCodigoMoedaOutrasDespesas, @mTaxaCambioOutrasDespesas
         ) x (cCodigoMoeda, mTaxaCambio)
         WHERE
@@ -595,15 +595,34 @@ BEGIN
 
         --tProrrogaçao
 		INSERT INTO tProrrogacao
-		(iDeclaracaoItemId, mTaxaSelicAcumulada, iProrrogacao, mIiValorProrrogacao, mIpiValorProrrogacao, mPisValorProrrogacao, mCofinsValorProrrogacao, mIcmsValorProrrogacao, dDataProrrogacao, dVencimentoProrrogacao)
-		SELECT
-			td.iDeclaracaoItemId, tp.mTaxaSelicAcumulada, tp.iProrrogacao, tp.mIiValorProrrogacao, tp.mIpiValorProrrogacao, tp.mPisValorProrrogacao, tp.mCofinsValorProrrogacao, tp.mIcmsValorProrrogacao, tp.dDataProrrogacao, tp.dVencimentoProrrogacao
-		FROM @tProrrogacao tp
-		JOIN tDeclaracaoItem td
-			ON td.iDeclaracaoId = @iDeclaracaoId
-		JOIN tNcm tn
-			ON tn.iNcmId = td.iNcmId
-			AND tn.cNcm = tp.cNcm;
+        (mTaxaSelicAcumulada, iProrrogacao, mIiValorProrrogacao,
+        mIpiValorProrrogacao, mPisValorProrrogacao, mCofinsValorProrrogacao,
+        mIcmsValorProrrogacao, dDataProrrogacao, dVencimentoProrrogacao)
+        SELECT tp.mTaxaSelicAcumulada, tp.iProrrogacao, tp.mIiValorProrrogacao,
+            tp.mIpiValorProrrogacao, tp.mPisValorProrrogacao, tp.mCofinsValorProrrogacao,
+            tp.mIcmsValorProrrogacao, tp.dDataProrrogacao, tp.dVencimentoProrrogacao
+        FROM @tProrrogacao tp
+
+
+        DECLARE @linhas INT = (SELECT COUNT(*) FROM tDeclaracaoItem WHERE iDeclaracaoId = @iDeclaracaoId);
+        DECLARE @contador INT = 1;
+        DECLARE @iDeclaracaoItemId INt = (SELECT TOP 1 iDeclaracaoItemId FROM tDeclaracaoItem WHERE iDeclaracaoId = @iDeclaracaoId);
+        DECLARE @iProrrogacaoId INT = (SELECT TOP 1 iProrrogacaoId FROM tProrrogacao WHERE iDeclaracaoItemId IS NULL)
+
+        WHILE @contador <= @linhas
+        BEGIN
+
+            --Capturar o Id em tDeclaracaoItemId
+            UPDATE tProrrogacao
+            SET iDeclaracaoItemId = @iDeclaracaoItemId
+            WHERE iProrrogacaoId = @iProrrogacaoId
+
+            --Atualizar tabela com o id capturado em tProrrogacao
+            SET @contador = @contador + 1;
+            SET @iDeclaracaoItemId = @iDeclaracaoItemId + 1;
+            SET @iProrrogacaoId = @iProrrogacaoId + 1;
+
+        END
 
         --tEstado (aliquota ICMS)
         UPDATE te
@@ -620,6 +639,101 @@ BEGIN
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 
+            ROLLBACK TRANSACTION;
+
+        EXEC stp_ManipulaErro;
+    END CATCH
+END
+GO
+
+/*--------------------------------------------------------------------------------------------
+Tipo Objeto     : Stored Procedure
+Objeto Nome    : stp_NovaProrrogacao
+Objetivo       : Atualizar prorrogação vigente por mais n dias, e calcular os impostos de acordo
+Projeto        : ProcessosTemporarios
+Criação        : 14/02/2026
+Execução       : Na Atualização de dados
+Palavra-chave  : Update
+Observação     : 
+Histórico      : Autor IDBug Data Descrição
+                ----------------------
+                Marcus V. Paiva Silveira 14/02/2026 Stored criada
+----------------------------------------------------------------------------------------------*/
+
+CREATE OR ALTER PROCEDURE stp_NovaProrrogacao
+    @iDeclaracaoId INT,
+    @mTaxaSelicAcumulada DECIMAL(5,2),
+    @tProrrogacao dtProrrogacao READONLY,
+    @tContratos dtContratoProrrogacao READONLY
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @iProrrogacao INT = (SELECT DISTINCT(iProrrogacao) + 1 FROM tProrrogacao);
+
+    BEGIN TRANSACTION;
+    BEGIN TRY
+
+        -- Inserir prorrogações
+        IF EXISTS (SELECT 1 FROM @tProrrogacao)
+        BEGIN
+            INSERT INTO tProrrogacao
+            (
+                iDeclaracaoItemId,
+                iProrrogacao,
+                mTaxaSelicAcumulada,
+                mIiValorProrrogacao,
+                mIpiValorProrrogacao,
+                mPisValorProrrogacao,
+                mCofinsValorProrrogacao,
+                mIcmsValorProrrogacao,
+                dDataProrrogacao,
+                dVencimentoProrrogacao
+            )
+            SELECT
+                tp.iDeclaracaoItemId,
+                @iProrrogacao,
+                @mTaxaSelicAcumulada,
+                tp.mIiValorProrrogacao,
+                tp.mIpiValorProrrogacao,
+                tp.mPisValorProrrogacao,
+                tp.mCofinsValorProrrogacao,
+                tp.mIcmsValorProrrogacao,
+                tp.dDataProrrogacao,
+                tp.dVencimentoProrrogacao
+            FROM @tProrrogacao tp;
+        END
+
+        -- Atualizar contratos
+        IF EXISTS (SELECT 1 FROM @tContratos)
+        BEGIN
+            UPDATE c
+            SET 
+                c.cNomeContrato = tc.cNomeContrato,
+                c.dContratoVencimento = tc.dContratoVencimento
+            FROM tContrato c
+            INNER JOIN tContratoDeclaracao cd ON c.iContratoId = cd.iContratoId
+            INNER JOIN @tContratos tc ON c.iContratoId = tc.iContratoId
+            WHERE cd.iDeclaracaoId = @iDeclaracaoId;
+
+            -- Atualiza apólices, somente se existirem
+            UPDATE ta
+            SET 
+                ta.cNumeroApolice = tc.cNumeroApolice,
+                ta.mValorSegurado = tc.mValorSegurado,
+                ta.dVencimentoGarantia = tc.dVencimentoApolice
+            FROM tApolice ta
+            INNER JOIN tDeclaracao td ON td.iApoliceId = ta.iApoliceId
+            INNER JOIN tContratoDeclaracao cd ON cd.iDeclaracaoId = td.iDeclaracaoId
+            INNER JOIN @tContratos tc ON cd.iContratoId = tc.iContratoId
+            WHERE td.iDeclaracaoId = @iDeclaracaoId
+              AND tc.cNumeroApolice IS NOT NULL;
+        END
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
 
         EXEC stp_ManipulaErro;

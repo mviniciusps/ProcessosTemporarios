@@ -40,12 +40,6 @@
           <AssociatedConnUserName>sa</AssociatedConnUserName>
           <FullPath>Procedures.sql</FullPath>
         </FileNode>
-        <FileNode Name="Queries.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>
-          <AssociatedConnUserName>sa</AssociatedConnUserName>
-          <FullPath>Queries.sql</FullPath>
-        </FileNode>
         <FileNode Name="Triggers.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:MARCUS\SQLEXPRESS:False:sa</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>MARCUS\SQLEXPRESS</AssociatedConnSrvName>

@@ -320,17 +320,13 @@ Date	 : 26/10/2025
 	EXEC stp_CriaTabela
 		@cSequenceNome = 'seqiLogisticaId',
 		@cNomeTabela = 'tLogistica',
-		@cNomeColunas = 'iLogisticaId|iCeId|iModalId|iLocalEmbarqueId|cConhecimentoEmbarque|
+		@cNomeColunas = 'iLogisticaId|iCeId|iModalId|iCidadeExteriorId|cConhecimentoEmbarque|
 						dDataEmbarque|dDataChegadaBrasil|mFrete|cCodigoMoeda',
 	@cTipoColunas = 'INT|INT|INT|INT|VARCHAR(50)|DATE
 						|DATE|DECIMAL(18,2)|CHAR(3)';
 
 	ALTER TABLE tLogistica
 		ADD CONSTRAINT PK_LOGISTICA_ID PRIMARY KEY(iLogisticaId);
-
-	ALTER TABLE tLogistica
-		ADD CONSTRAINT FK_LOGISTICA_LOCAL_EMBARQUE FOREIGN KEY(iLocalEmbarqueId)
-		REFERENCES tLocalEmbarque(iLocalEmbarqueId);
 
 	ALTER TABLE tLogistica
 		ADD CONSTRAINT FK_LOGISTICA_CE FOREIGN KEY(iCeId)
@@ -361,8 +357,8 @@ Date	 : 26/10/2025
 	EXEC stp_CriaTabela
 		@cSequenceNome = 'seqiApoliceId',
 		@cNomeTabela = 'tApolice',
-		@cNomeColunas = 'iApoliceId|cNumeroApolice|dVencimentoGarantia|dValorSegurado',
-		@cTipoColunas = 'INT|INT|DATE|DECIMAL(18,2)';
+		@cNomeColunas = 'iApoliceId|cNumeroApolice|dVencimentoGarantia|mValorSegurado',
+		@cTipoColunas = 'INT|VARCHAR(50)|DATE|DECIMAL(18,2)';
 
 	ALTER TABLE tApolice
 		ADD CONSTRAINT PK_APOLICE_ID PRIMARY KEY(iApoliceId);
@@ -385,7 +381,7 @@ Date	 : 26/10/2025
 	ALTER TABLE tNcm
 		ADD CONSTRAINT UQ_NCM UNIQUE(cNcm);
 
-	--Criaçao de variavel para parametro da procedure
+	DROP TYPE IF EXISTS dtNcm
 	CREATE TYPE dtNcm
 	AS TABLE (
 		cNcm CHAR(8),
@@ -403,7 +399,7 @@ Date	 : 26/10/2025
 		@cNomeTabela = 'tDeclaracaoItem',
 		@cNomeColunas = 'iDeclaracaoItemId|iDeclaracaoId|iNcmId|dDataProrrogacao|mTaxaSelicAcumulada|
 						iProrrogacao|mValorFob|mPesoLiquido|mValorAduaneiro|mIiValor|
-						mIpiValor|mPpisValor|mCofinsValor|mIcmsValor',
+						mIpiValor|mPisValor|mCofinsValor|mIcmsValor',
 		@cTipoColunas = 'INT|INT|INT|DATE|DECIMAL(5,2)|INT|DECIMAL(18,2)|DECIMAL(18,2)|DECIMAL(18,2)|
 						DECIMAL(18,2)|DECIMAL(18,2)|DECIMAL(18,2)|DECIMAL(18,2)|DECIMAL(18,2)';
 
@@ -418,10 +414,7 @@ Date	 : 26/10/2025
 		ADD CONSTRAINT FK_DECLARACAO_ITEM_NCM FOREIGN KEY(iNcmId)
 		REFERENCES tNcm(iNcmId);
 
-	DROP TYPE IF EXISTS dbo.dtDeclaracaoItem;
-	GO
-
-	--Criaçao de variavel para parametro da procedure
+	DROP TYPE IF EXISTS dtDeclaracaoItem
 	CREATE TYPE dtDeclaracaoItem AS TABLE (
 		cNcm CHAR(8),
 		mValorFob DECIMAL(18,2),
@@ -455,9 +448,10 @@ Date	 : 26/10/2025
 		ADD CONSTRAINT FK_PRORROGACAO_DECLARACAO_ITEM FOREIGN KEY (iDeclaracaoItemId)
 		REFERENCES tDeclaracaoItem(iDeclaracaoItemId);
 	
-	--Criaçao de variavel para parametro da procedure
+	DROP TYPE IF EXISTS dtProrrogacao
 	CREATE TYPE dtProrrogacao AS TABLE (
 		cNcm CHAR(8),
+		iDeclaracaoItemId INT,
 		mTaxaSelicAcumulada DECIMAL(5,2),
 		iProrrogacao INT,
 		mIiValorProrrogacao DECIMAL(18,2),
@@ -506,6 +500,16 @@ Date	 : 26/10/2025
 	ALTER TABLE tContrato
 		ADD CONSTRAINT FK_CONTRATO_CONTRATO_TIPO FOREIGN KEY(iContratoTipoId)
 		REFERENCES tContratoTipo(iContratoTipoId);
+	
+	DROP TYPE IF EXISTS dtContratoProrrogacao
+	CREATE TYPE dtContratoProrrogacao AS TABLE(
+		iContratoId INT,
+		cNomeContrato VARCHAR(200),
+		dContratoVencimento DATE,
+		cNumeroApolice VARCHAR(100),
+		mValorSegurado DECIMAL(18,2),
+		dVencimentoApolice DATE
+	)
 
 	GO
 
