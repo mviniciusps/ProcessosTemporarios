@@ -1,2 +1,8 @@
 DataBaseTemp/Queries.sql
-/Outros/
+
+# .NET build folders
+bin/
+obj/
+
+# Visual Studio
+.vs/
