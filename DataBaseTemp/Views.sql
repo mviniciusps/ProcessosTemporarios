@@ -35,8 +35,6 @@ AS
         ON tn.iCnpjId = td.iCnpjId
     WHERE tp.bIsAtivo = 1;
 GO
---FIM da VIEW vTelaPrincipalAtivos
-
 
 /*--------------------------------------------------------------------------------------------        
 Tipo Objeto: View
@@ -75,4 +73,3 @@ AS
         ON tn.iCnpjId = td.iCnpjId
     WHERE tp.bIsAtivo = 0;
 GO
---FIM da VIEW vTelaPrincipalArquivados
