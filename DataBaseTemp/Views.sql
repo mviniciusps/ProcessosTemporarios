@@ -17,10 +17,10 @@ CREATE OR ALTER VIEW dbo.vTelaPrincipalAtivos
 WITH SCHEMABINDING
 AS
     SELECT
-        tn.cNomeEmpresa       AS cNomeCliente,
+        tn.cNomeEmpresa       AS NomeCliente,
         td.cNumeroDeclaracao  AS Declaracao,
-        tp.cReferenciaBraslog AS [Referencia Braslog],
-        tp.cReferenciaCliente AS [Referencia Cliente],
+        tp.cReferenciaBraslog AS ReferenciaBraslog,
+        tp.cReferenciaCliente AS ReferenciaCliente,
         (
             SELECT TOP (1) tpr.dVencimentoProrrogacao
             FROM dbo.tDeclaracaoItem tdi2
@@ -55,10 +55,10 @@ CREATE OR ALTER VIEW dbo.vTelaPrincipalArquivados
 WITH SCHEMABINDING
 AS
     SELECT
-        tn.cNomeEmpresa       AS cNomeCliente,
+        tn.cNomeEmpresa       AS NomeCliente,
         td.cNumeroDeclaracao  AS Declaracao,
-        tp.cReferenciaBraslog AS [Referencia Braslog],
-        tp.cReferenciaCliente AS [Referencia Cliente],
+        tp.cReferenciaBraslog AS ReferenciaBraslog,
+        tp.cReferenciaCliente AS ReferenciaCliente,
         (
             SELECT TOP (1) tpr.dVencimentoProrrogacao
             FROM dbo.tDeclaracaoItem tdi2
