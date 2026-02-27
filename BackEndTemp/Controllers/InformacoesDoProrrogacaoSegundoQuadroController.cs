@@ -19,15 +19,11 @@ public class InformacoesDoProrrogacaoSegundoQuadroController : ControllerBase
     [HttpGet("{id:int}")]
     public ActionResult<IEnumerable<InformacoesGeraisPorProrrogacaoSegundoQuadro>> GetInformacoesProrrogacaoSegundoQuadro(int id)
     {
-        var info = _context.informacoesGeraisPorProrrogacaoSegundoQuadro
+        var infos = _context.informacoesGeraisPorProrrogacaoSegundoQuadro
             .FromSqlInterpolated($"SELECT * FROM dbo.informacoesGeraisPorProrrogacaoProcessoSegundoQuadro({id})")
             .ToList();
 
-        if (info is null)
-        {
-            return NotFound();
-        }
-
-        return Ok(info);
+        if (infos is null) return NotFound();
+        return Ok(infos);
     }
 }

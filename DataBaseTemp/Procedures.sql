@@ -425,6 +425,8 @@ BEGIN
         INSERT INTO tProcesso (iDeclaracaoId, cReferenciaBraslog, cReferenciaCliente) SELECT @iDeclaracaoId, @cReferenciaBraslog, @cReferenciaCliente 
             WHERE NOT EXISTS (SELECT 1 FROM tProcesso WHERE iDeclaracaoId = @iDeclaracaoId);
 
+		SELECT @iDeclaracaoID As iDeclaracaoId;
+
         COMMIT TRANSACTION;
 
     END TRY

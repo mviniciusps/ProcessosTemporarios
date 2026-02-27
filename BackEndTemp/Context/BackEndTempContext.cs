@@ -12,6 +12,7 @@ public class BackEndTempContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        //VIEWS
         modelBuilder.Entity<ProcessosAtivos>()
             .HasNoKey()
             .ToView("vTelaPrincipalAtivos");
@@ -20,35 +21,25 @@ public class BackEndTempContext : DbContext
             .HasNoKey()
             .ToView("vTelaPrincipalArquivados");
 
-        modelBuilder.Entity<InformacoesPorProcesso>(entity =>
-        {
-            entity.HasNoKey();
-        });
+        //FUNCTIONS
+        modelBuilder.Entity<InformacoesPorProcesso>().HasNoKey();
 
-        modelBuilder.Entity<ContratosPorProcesso>(entity =>
-        {
-            entity.HasNoKey();
-        });
+        modelBuilder.Entity<ContratosPorProcesso>().HasNoKey();
 
-        modelBuilder.Entity<InformacoesGeraisPorProrrogacao>(entity =>
-        {
-            entity.HasNoKey();
-        });
+        modelBuilder.Entity<InformacoesGeraisPorProrrogacao>().HasNoKey();
 
-        modelBuilder.Entity<InformacoesGeraisPorProrrogacaoSegundoQuadro>(entity =>
-        {
-            entity.HasNoKey();
-        });
+        modelBuilder.Entity<InformacoesGeraisPorProrrogacaoSegundoQuadro>().HasNoKey();
 
-        modelBuilder.Entity<InformacoesGeraisTodasProrrogacoesPorProcesso>(entity =>
-        {
-            entity.HasNoKey();
-        });
+        modelBuilder.Entity<InformacoesGeraisTodasProrrogacoesPorProcesso>().HasNoKey();
+
+        modelBuilder.Entity<IdPrincipal>().HasNoKey();
     }
 
-
+    //VIEWS
     public DbSet<ProcessosAtivos> processosAtivos { get; set; }
     public DbSet<ProcessosArquivados> processosArquivados { get; set; }
+
+    //FUNCTIONS
     public DbSet<InformacoesPorProcesso> informacoesPorProcessos { get; set; }
     public DbSet<ContratosPorProcesso> contratosPorProcesso { get; set; }
     public DbSet<InformacoesGeraisPorProrrogacao> informacoesGeraisPorProrrogacao { get; set; }

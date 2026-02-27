@@ -19,14 +19,12 @@ public class InformacoesDoProcessoController : ControllerBase
     [HttpGet("{id:int}")]
     public ActionResult<IEnumerable<InformacoesPorProcesso>> GetInformacoes(int id)
     {
-        var infoProcesso = _context.informacoesPorProcessos
+        var infos = _context.informacoesPorProcessos
             .FromSqlInterpolated($"SELECT * FROM dbo.informacoesCadastroPorProcesso({id})")
             .AsNoTracking()
             .ToList();
 
-        if (!infoProcesso.Any())
-            return NotFound();
-
-        return Ok(infoProcesso);
+        if (infos is null) return NotFound();
+        return Ok(infos);
     }
 }

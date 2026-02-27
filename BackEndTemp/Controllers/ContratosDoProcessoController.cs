@@ -19,13 +19,11 @@ public class ContratosDoProcessoController : ControllerBase
     [HttpGet("{id:int}")]
     public ActionResult<IEnumerable<InformacoesPorProcesso>> GetContratos(int id)
     {
-        var contratoProcesso = _context.contratosPorProcesso
+        var infos = _context.contratosPorProcesso
             .FromSqlInterpolated($"SELECT * FROM dbo.contratosPorDeclaracao({id})")
             .ToList();
 
-        if (!contratoProcesso.Any())
-            return NotFound();
-
-        return Ok(contratoProcesso);
+        if (infos is null) return NotFound();
+        return Ok(infos);
     }
 }
