@@ -596,7 +596,7 @@ Date	 : 26/10/2025
 	@cSequenceNome = 'seqiProcessoId',
 	@cNomeTabela = 'tProcesso',
 	@cNomeColunas = 'iProcessoId|iDeclaracaoId|cReferenciaBraslog|cReferenciaCliente|cHistorico|bIsAtivo',
-	@cTipoColunas = 'INT|INT|VARCHAR(50)|VARCHAR(13)|VARCHAR(MAX)|BIT';
+	@cTipoColunas = 'INT|INT|VARCHAR(13)|VARCHAR(50)|VARCHAR(MAX)|BIT';
 
 	ALTER TABLE tProcesso
 		ADD CONSTRAINT PK_PROCESSO_ID PRIMARY KEY(iProcessoId);
@@ -610,7 +610,7 @@ Date	 : 26/10/2025
 
 	ALTER TABLE tProcesso
 		ADD CONSTRAINT DF_HISTORICO DEFAULT(CONVERT(CHAR(10), GETDATE(), 103) + 
-		' - Processo inclu�do no controle') FOR cHistorico;
+		' - Processo incluído no controle') FOR cHistorico;
 
 	ALTER TABLE tProcesso
 		ADD CONSTRAINT DF_IS_ATIVO DEFAULT(1) FOR bIsAtivo;

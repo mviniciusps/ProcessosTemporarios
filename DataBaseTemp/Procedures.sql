@@ -115,7 +115,7 @@ BEGIN
     DECLARE @Sql VARCHAR(MAX) = '';
     DECLARE @ColunasTabela TABLE (ID INT IDENTITY(1,1),NomeColuna VARCHAR(MAX));
     DECLARE @TipoColuna TABLE (ID INT IDENTITY(1,1),TipoColuna VARCHAR(MAX));
-    DECLARE @Coluna NVARCHAR(MAX), @Tipo VARCHAR(MAX),
+    DECLARE @Coluna VARCHAR(MAX), @Tipo VARCHAR(MAX),
             @Contador INT = 0;
     
 
@@ -234,51 +234,51 @@ Marcus V. Paiva Silveira		  08/12/2025 Padronização de SET statements e elimin
 Marcus V. Paiva Silveira          08/12/2025 --iCeMercanteStatus sendo inserido como Nulo
 */
 CREATE OR ALTER PROCEDURE stp_InserirDados
-    @cPaisNome NVARCHAR(100),
-    @cNomeCidadeExterior NVARCHAR(100),
-    @cNomeModal NVARCHAR(50),
-    @cEstadoNomeRecinto NVARCHAR(MAX),
-    @cCidadeNomeRecinto NVARCHAR(MAX),
-    @cCepRecinto NVARCHAR(MAX),
-    @cNomeLogradouroRecinto NVARCHAR(MAX),
-    @cBairroLogradouroRecinto NVARCHAR(MAX),
-    @cEstadoNomeCnpj NVARCHAR(MAX),
-    @cCidadeNomeCnpj NVARCHAR(MAX),
-    @cCepCnpj NVARCHAR(MAX),
-    @cNomeLogradouroCnpj NVARCHAR(MAX),
-    @cBairroLogradouroCnpj NVARCHAR(MAX),
-    @cCnpj NVARCHAR(20),
-    @cNomeEmpresa NVARCHAR(100),
-    @cNumeroApolice NVARCHAR(50) = NULL,
+    @cPaisNome VARCHAR(100),
+    @cNomeCidadeExterior VARCHAR(100),
+    @cNomeModal VARCHAR(50),
+    @cEstadoNomeRecinto VARCHAR(MAX),
+    @cCidadeNomeRecinto VARCHAR(MAX),
+    @cCepRecinto CHAR(8),
+    @cNomeLogradouroRecinto VARCHAR(MAX),
+    @cBairroLogradouroRecinto VARCHAR(MAX),
+    @cEstadoNomeCnpj VARCHAR(MAX),
+    @cCidadeNomeCnpj VARCHAR(MAX),
+    @cCepCnpj CHAR(8),
+    @cNomeLogradouroCnpj VARCHAR(MAX),
+    @cBairroLogradouroCnpj VARCHAR(MAX),
+    @cCnpj VARCHAR(14),
+    @cNomeEmpresa VARCHAR(100),
+    @cNumeroApolice VARCHAR(50) = NULL,
     @dVencimentoGarantia DATE = NULL,
     @mValorSegurado DECIMAL(18,2) = NULL,
-    @cNumeroCe NVARCHAR(15) = NULL,
-    @cStatusCe NVARCHAR(50) = NULL,
+    @cNumeroCe VARCHAR(15) = NULL,
+    @cStatusCe VARCHAR(50) = NULL,
     @mValorAfrmmSuspenso DECIMAL(18,2) = NULL,
-    @cConhecimentoEmbarque NVARCHAR(50),
+    @cConhecimentoEmbarque VARCHAR(50),
     @dDataEmbarque DATE,
     @dDataChegada DATE = NULL,    
-    @cNomeRegimeAduaneiro NVARCHAR(50),
+    @cNomeRegimeAduaneiro VARCHAR(50),
     @dDataRegistro DATE,
-    @cNomeRecinto NVARCHAR(100),
-    @cNumeroRecintoAduaneiro NVARCHAR(50),
-    @cNomeUnidadeReceitaFederal NVARCHAR(100),
-    @cUnidadeReceitaFederal NVARCHAR(100),
-    @cDescricao NVARCHAR(200) = NULL,
-    @cNumeroDeclaracao NVARCHAR(50),
-    @cNumeroDossie NVARCHAR(50) = NULL,
-    @cNumeroProcessoAdministrativo NVARCHAR(50) = NULL,
+    @cNomeRecinto VARCHAR(100),
+    @cNumeroRecintoAduaneiro CHAR(7),
+    @cNomeUnidadeReceitaFederal VARCHAR(100),
+    @cUnidadeReceitaFederal CHAR(7),
+    @cDescricao VARCHAR(200) = NULL,
+    @cNumeroDeclaracao VARCHAR(12),
+    @cNumeroDossie VARCHAR(50) = NULL,
+    @cNumeroProcessoAdministrativo VARCHAR(50) = NULL,
     @dDataDesembaraco DATE,
-    @cNomeContratoAdmissao NVARCHAR(MAX) = NULL,
+    @cNomeContratoAdmissao VARCHAR(MAX) = NULL,
     @dContratoDataAssinaturaAdmissao DATE = NULL,
     @dContratoVencimentoAdmissao DATE = NULL,
-    @cContratoTipoAdmissao NVARCHAR(50) = NULL,
-    @cNomeContratoPrestacaoServico NVARCHAR(MAX) = NULL,
+    @cContratoTipoAdmissao VARCHAR(50) = NULL,
+    @cNomeContratoPrestacaoServico VARCHAR(MAX) = NULL,
     @dContratoDataAssinaturaPrestacaoServico DATE = NULL,
     @dContratoVencimentoPrestacaoServico DATE = NULL,
-    @cContratoTipoPrestacaoServico NVARCHAR(50) = NULL,
-    @cReferenciaBraslog NVARCHAR(50),
-    @cReferenciaCliente NVARCHAR(50)
+    @cContratoTipoPrestacaoServico VARCHAR(50) = NULL,
+    @cReferenciaBraslog VARCHAR(50),
+    @cReferenciaCliente VARCHAR(50) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -493,7 +493,7 @@ CREATE OR ALTER PROCEDURE stp_InserirDadosProcessosImportacao
     @mTaxaSiscomex DECIMAL(18,2),
 
     -- ICMS (POR PROCESSO)
-    @mAliqIcms DECIMAL(5,2),	
+    @mAliqIcms DECIMAL(5,2),
 
     -- PARAMETROS DO TIPO TABELA (iguais as tabelas originais)
     @tNcm dtNcm READONLY,
