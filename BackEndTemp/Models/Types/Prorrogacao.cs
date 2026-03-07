@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+namespace Types;
+
 public class Prorrogacao
 {
     [StringLength(8, MinimumLength = 8)]

@@ -58,7 +58,7 @@ public class InserirDadosImportacao
     [Column(TypeName = "decimal(5,2)")]
     public decimal? AliquotaICMS { get; set; }
 
-    public List<Ncm>? Ncm { get; set; }
+    public List<Ncm>? ncm { get; set; }
     public List<Item>? item { get; set; }
     public List<Prorrogacao>? prorrogacao { get; set; }
 }

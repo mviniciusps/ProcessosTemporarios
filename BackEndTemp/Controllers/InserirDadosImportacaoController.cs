@@ -20,7 +20,7 @@ public class InserirDadosImportacaoController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult Post(InserirDadosImportacao inserir)
+    public ActionResult PostInserirDadosImportacao(InserirDadosImportacao inserir)
     {
         if (inserir is null)
             return BadRequest();
@@ -52,23 +52,23 @@ public class InserirDadosImportacaoController : ControllerBase
             new SqlParameter("@tNcm", SqlDbType.Structured)
             {
                 TypeName = "dtNcm",
-                Value = inserir.Ncm != null ? tNcm(inserir.Ncm) : DBNull.Value
+                Value = inserir.ncm != null ? tNcm(inserir.ncm) : DBNull.Value
             },
             new SqlParameter("@tDeclaracaoItem", SqlDbType.Structured)
             {
-                TypeName = "dtNcm",
+                TypeName = "dtDeclaracaoItem ",
                 Value = inserir.item != null ? tDeclaracaoItem(inserir.item) : DBNull.Value
             },
-            new SqlParameter("@tNcm", SqlDbType.Structured)
+            new SqlParameter("@tProrrogacao", SqlDbType.Structured)
             {
-                TypeName = "dtNcm",
+                TypeName = "dtProrrogacao",
                 Value = inserir.prorrogacao != null ? tProrrogacao(inserir.prorrogacao) : DBNull.Value
-            },
+            }
         };
 
         var info = _context
             .Set<IdPrincipal>()
-            .FromSqlRaw(@"EXEC stp_InserirDadosProcessosImportacao @iCeId, @iLogisticaId, @iValoresCalculoAduaneiroId, @iDeclaracaoId, @mFrete, @mOutrasDespesas, @mSeguro, @mValorCapatazias, @mTaxaUtilizacaoMercante, @dDataRegistro, @cCodigoMoedaFob, @mTaxaCambioFob,    @cCodigoMoedaFrete, @mTaxaCambioFrete, @cCodigoMoedaSeguro, @mTaxaCambioSeguro, @cCodigoMoedaOutrasDespesas,    @mTaxaCambioOutrasDespesas, @mAdicoes, @mTaxaSiscomex, @mAliqIcms, @tNcm, @tDeclaracaoItem, @tProrrogacao",
+            .FromSqlRaw(@"EXEC stp_InserirDadosProcessosImportacao @iCeId, @iLogisticaId, @iValoresCalculoAduaneiroId, @iDeclaracaoId, @mFrete, @mOutrasDespesas, @mSeguro, @mValorCapatazias, @mTaxaUtilizacaoMercante, @dDataRegistro, @cCodigoMoedaFob, @mTaxaCambioFob, @cCodigoMoedaFrete, @mTaxaCambioFrete, @cCodigoMoedaSeguro, @mTaxaCambioSeguro, @cCodigoMoedaOutrasDespesas, @mTaxaCambioOutrasDespesas, @mAdicoes, @mTaxaSiscomex, @mAliqIcms, @tNcm, @tDeclaracaoItem, @tProrrogacao",
             parametros)
             .ToList()
             .FirstOrDefault();

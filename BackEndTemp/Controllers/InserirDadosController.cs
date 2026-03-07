@@ -18,7 +18,7 @@ public class InserirDadosController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult Post(InserirDados inserir)
+    public ActionResult PostInserirDados(InserirDados inserir)
     {
         if (inserir is null)
             return BadRequest();
