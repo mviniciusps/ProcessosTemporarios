@@ -1,4 +1,4 @@
-namespace Models;
+namespace Functions;
 
 public class InformacoesGeraisPorProrrogacao
 {
